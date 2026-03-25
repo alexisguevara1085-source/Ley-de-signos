@@ -20,7 +20,7 @@ margin:0;
 background:white;
 padding:30px;
 border-radius:20px;
-width:900px;
+width:950px;
 display:flex;
 gap:30px;
 box-shadow:0 10px 25px rgba(0,0,0,0.2);
@@ -32,9 +32,34 @@ text-align:center;
 }
 
 .operacion{
-font-size:60px;
+display:flex;
+justify-content:center;
+align-items:flex-start;
+gap:40px;
+margin-bottom:20px;
+}
+
+.numeroBloque{
+text-align:center;
+}
+
+.numero{
+font-size:70px;
 font-weight:bold;
-margin-bottom:10px;
+}
+
+.caja{
+border:3px solid #333;
+border-radius:10px;
+padding:10px;
+margin-top:10px;
+min-width:120px;
+min-height:80px;
+display:flex;
+justify-content:center;
+align-items:center;
+gap:8px;
+flex-wrap:wrap;
 }
 
 input{
@@ -58,8 +83,8 @@ cursor:pointer;
 }
 
 .resultado{
-font-size:25px;
 margin-top:15px;
+font-size:25px;
 font-weight:bold;
 }
 
@@ -82,7 +107,7 @@ box-shadow:0 3px 6px rgba(0,0,0,0.2);
 background:#ddd;
 }
 
-/* DADOS */
+/* DADO */
 
 .dado{
 width:60px;
@@ -104,11 +129,11 @@ border-radius:50%;
 margin:auto;
 }
 
-.dados{
+.dadosResultado{
 display:flex;
 justify-content:center;
 gap:10px;
-margin:10px;
+margin-top:10px;
 flex-wrap:wrap;
 }
 
@@ -123,13 +148,31 @@ flex-wrap:wrap;
 
 <h2>Cálculo Mental</h2>
 
-<div class="operacion" id="operacion"></div>
+<div class="operacion">
 
-<div class="dados" id="dadosOperacion"></div>
+<div class="numeroBloque">
+
+<div class="numero" id="numA"></div>
+
+<div class="caja" id="cajaA"></div>
+
+</div>
+
+<div style="font-size:60px;margin-top:20px;">+</div>
+
+<div class="numeroBloque">
+
+<div class="numero" id="numB"></div>
+
+<div class="caja" id="cajaB"></div>
+
+</div>
+
+</div>
 
 <input id="respuesta" placeholder="?">
 
-<div class="dados" id="dadosResultado"></div>
+<div class="dadosResultado" id="dadosResultado"></div>
 
 <button onclick="verificar()">Verificar</button>
 
@@ -168,12 +211,14 @@ function nuevoEjercicio(){
 a=Math.floor(Math.random()*9)+1;
 b=Math.floor(Math.random()*9)+1;
 
-document.getElementById("operacion").textContent=a+" + "+b;
+document.getElementById("numA").textContent=a;
+document.getElementById("numB").textContent=b;
+
+dibujarNumero(a,"cajaA");
+dibujarNumero(b,"cajaB");
 
 input.value="";
 document.getElementById("mensaje").textContent="";
-
-dibujarOperacion();
 document.getElementById("dadosResultado").innerHTML="";
 
 }
@@ -191,8 +236,6 @@ input.value=input.value.slice(0,-1);
 mostrarResultado();
 
 }
-
-/* GENERAR DADO */
 
 function crearDado(num){
 
@@ -221,56 +264,37 @@ return dado;
 
 }
 
-/* REPRESENTAR NUMERO CON DADOS */
+function descomponer(numero){
 
-function representar(num){
+let dados=[];
 
-let lista=[];
+while(numero>6){
 
-if(num<=6){
-
-lista.push(num);
-
-}else if(num==7){
-
-lista=[6,1];
-
-}else if(num==8){
-
-lista=[5,3];
-
-}else if(num==9){
-
-lista=[5,4];
-
-}else if(num==10){
-
-lista=[5,5];
+dados.push(6);
+numero-=6;
 
 }
 
-return lista;
+if(numero>0) dados.push(numero);
+
+return dados;
 
 }
 
-/* DIBUJAR OPERACION */
+function dibujarNumero(num,id){
 
-function dibujarOperacion(){
-
-let cont=document.getElementById("dadosOperacion");
+let cont=document.getElementById(id);
 cont.innerHTML="";
 
-representar(a).forEach(n=>{
-cont.appendChild(crearDado(n));
-});
+let lista=descomponer(num);
 
-representar(b).forEach(n=>{
+lista.forEach(n=>{
+
 cont.appendChild(crearDado(n));
+
 });
 
 }
-
-/* RESULTADO VISUAL */
 
 function mostrarResultado(){
 
@@ -281,13 +305,15 @@ cont.innerHTML="";
 
 if(isNaN(valor)) return;
 
-representar(valor).forEach(n=>{
+let lista=descomponer(valor);
+
+lista.forEach(n=>{
+
 cont.appendChild(crearDado(n));
+
 });
 
 }
-
-/* VERIFICAR */
 
 function verificar(){
 
