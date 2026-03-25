@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cálculo Mental con Dados</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#667eea,#764ba2);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+
+.container{
+background:white;
+padding:30px;
+border-radius:20px;
+width:900px;
+display:flex;
+gap:30px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+.main{
+flex:1;
+text-align:center;
+}
+
+.operacion{
+font-size:60px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+input{
+width:120px;
+font-size:35px;
+text-align:center;
+padding:10px;
+border-radius:10px;
+border:2px solid #ccc;
+}
+
+button{
+margin-top:10px;
+padding:10px 20px;
+font-size:20px;
+border:none;
+border-radius:10px;
+background:#4CAF50;
+color:white;
+cursor:pointer;
+}
+
+.resultado{
+font-size:25px;
+margin-top:15px;
+font-weight:bold;
+}
+
+.teclado{
+display:grid;
+grid-template-columns:repeat(3,70px);
+gap:10px;
+}
+
+.tecla{
+background:#f1f1f1;
+padding:18px;
+font-size:22px;
+border-radius:10px;
+cursor:pointer;
+box-shadow:0 3px 6px rgba(0,0,0,0.2);
+}
+
+.tecla:hover{
+background:#ddd;
+}
+
+/* DADOS */
+
+.dado{
+width:60px;
+height:60px;
+background:black;
+border-radius:10px;
+display:grid;
+grid-template-columns:repeat(3,1fr);
+grid-template-rows:repeat(3,1fr);
+padding:6px;
+gap:4px;
+}
+
+.punto{
+width:12px;
+height:12px;
+background:white;
+border-radius:50%;
+margin:auto;
+}
+
+.dados{
+display:flex;
+justify-content:center;
+gap:10px;
+margin:10px;
+flex-wrap:wrap;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="main">
+
+<h2>Cálculo Mental</h2>
+
+<div class="operacion" id="operacion"></div>
+
+<div class="dados" id="dadosOperacion"></div>
+
+<input id="respuesta" placeholder="?">
+
+<div class="dados" id="dadosResultado"></div>
+
+<button onclick="verificar()">Verificar</button>
+
+<div class="resultado" id="mensaje"></div>
+
+</div>
+
+<div class="teclado">
+
+<div class="tecla" onclick="agregar(1)">1</div>
+<div class="tecla" onclick="agregar(2)">2</div>
+<div class="tecla" onclick="agregar(3)">3</div>
+
+<div class="tecla" onclick="agregar(4)">4</div>
+<div class="tecla" onclick="agregar(5)">5</div>
+<div class="tecla" onclick="agregar(6)">6</div>
+
+<div class="tecla" onclick="agregar(7)">7</div>
+<div class="tecla" onclick="agregar(8)">8</div>
+<div class="tecla" onclick="agregar(9)">9</div>
+
+<div class="tecla" onclick="borrar()">⌫</div>
+<div class="tecla" onclick="agregar(0)">0</div>
+
+</div>
+
+</div>
+
+<script>
+
+let a,b;
+let input=document.getElementById("respuesta");
+
+function nuevoEjercicio(){
+
+a=Math.floor(Math.random()*9)+1;
+b=Math.floor(Math.random()*9)+1;
+
+document.getElementById("operacion").textContent=a+" + "+b;
+
+input.value="";
+document.getElementById("mensaje").textContent="";
+
+dibujarOperacion();
+document.getElementById("dadosResultado").innerHTML="";
+
+}
+
+function agregar(n){
+
+input.value+=n;
+mostrarResultado();
+
+}
+
+function borrar(){
+
+input.value=input.value.slice(0,-1);
+mostrarResultado();
+
+}
+
+/* GENERAR DADO */
+
+function crearDado(num){
+
+let dado=document.createElement("div");
+dado.className="dado";
+
+let posiciones=[[],[5],[1,9],[1,5,9],[1,3,7,9],[1,3,5,7,9],[1,3,4,6,7,9]];
+
+for(let i=1;i<=9;i++){
+
+let celda=document.createElement("div");
+
+if(posiciones[num] && posiciones[num].includes(i)){
+
+let p=document.createElement("div");
+p.className="punto";
+celda.appendChild(p);
+
+}
+
+dado.appendChild(celda);
+
+}
+
+return dado;
+
+}
+
+/* REPRESENTAR NUMERO CON DADOS */
+
+function representar(num){
+
+let lista=[];
+
+if(num<=6){
+
+lista.push(num);
+
+}else if(num==7){
+
+lista=[6,1];
+
+}else if(num==8){
+
+lista=[5,3];
+
+}else if(num==9){
+
+lista=[5,4];
+
+}else if(num==10){
+
+lista=[5,5];
+
+}
+
+return lista;
+
+}
+
+/* DIBUJAR OPERACION */
+
+function dibujarOperacion(){
+
+let cont=document.getElementById("dadosOperacion");
+cont.innerHTML="";
+
+representar(a).forEach(n=>{
+cont.appendChild(crearDado(n));
+});
+
+representar(b).forEach(n=>{
+cont.appendChild(crearDado(n));
+});
+
+}
+
+/* RESULTADO VISUAL */
+
+function mostrarResultado(){
+
+let valor=parseInt(input.value);
+
+let cont=document.getElementById("dadosResultado");
+cont.innerHTML="";
+
+if(isNaN(valor)) return;
+
+representar(valor).forEach(n=>{
+cont.appendChild(crearDado(n));
+});
+
+}
+
+/* VERIFICAR */
+
+function verificar(){
+
+let r=parseInt(input.value);
+
+if(r===a+b){
+
+document.getElementById("mensaje").style.color="green";
+document.getElementById("mensaje").textContent="✔ Correcto";
+
+setTimeout(nuevoEjercicio,1200);
+
+}else{
+
+document.getElementById("mensaje").style.color="red";
+document.getElementById("mensaje").textContent="✘ Intenta otra vez";
+
+}
+
+}
+
+nuevoEjercicio();
+
+</script>
+
+</body>
+</html>
