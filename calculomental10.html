@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>¿Cuánto falta para 10?</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#43cea2,#185a9d);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+
+.container{
+background:white;
+padding:30px;
+border-radius:20px;
+width:950px;
+display:flex;
+gap:30px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+.main{
+flex:1;
+text-align:center;
+}
+
+.numeroLinea{
+display:flex;
+justify-content:center;
+align-items:center;
+gap:40px;
+margin-bottom:20px;
+}
+
+.numeroBloque{
+text-align:center;
+}
+
+.numero{
+font-size:70px;
+font-weight:bold;
+}
+
+.cuadros{
+margin-top:10px;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:5px;
+min-height:120px;
+}
+
+.fila{
+display:flex;
+gap:5px;
+}
+
+.cuadro{
+width:22px;
+height:22px;
+border-radius:4px;
+}
+
+input{
+width:120px;
+font-size:35px;
+text-align:center;
+padding:10px;
+border-radius:10px;
+border:2px solid #ccc;
+}
+
+button{
+margin-top:10px;
+padding:10px 20px;
+font-size:20px;
+border:none;
+border-radius:10px;
+background:#4CAF50;
+color:white;
+cursor:pointer;
+}
+
+.resultado{
+margin-top:15px;
+font-size:24px;
+font-weight:bold;
+}
+
+.teclado{
+display:grid;
+grid-template-columns:repeat(3,70px);
+gap:10px;
+}
+
+.tecla{
+background:#f1f1f1;
+padding:18px;
+font-size:22px;
+border-radius:10px;
+cursor:pointer;
+box-shadow:0 3px 6px rgba(0,0,0,0.2);
+}
+
+.tecla:hover{
+background:#ddd;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="main">
+
+<h2>¿Cuánto falta para llegar a 10?</h2>
+
+<div class="numeroLinea">
+
+<div class="numeroBloque">
+
+<div class="numero" id="numA"></div>
+
+<div class="cuadros" id="grafA"></div>
+
+</div>
+
+<div style="font-size:60px">→</div>
+
+<div class="numeroBloque">
+
+<div class="numero">10</div>
+
+<div class="cuadros" id="graf10"></div>
+
+</div>
+
+</div>
+
+<input id="respuesta" placeholder="?">
+
+<div class="cuadros" id="grafRespuesta"></div>
+
+<button onclick="verificar()">Verificar</button>
+
+<div class="resultado" id="mensaje"></div>
+
+</div>
+
+<div class="teclado">
+
+<div class="tecla" onclick="agregar(1)">1</div>
+<div class="tecla" onclick="agregar(2)">2</div>
+<div class="tecla" onclick="agregar(3)">3</div>
+
+<div class="tecla" onclick="agregar(4)">4</div>
+<div class="tecla" onclick="agregar(5)">5</div>
+<div class="tecla" onclick="agregar(6)">6</div>
+
+<div class="tecla" onclick="agregar(7)">7</div>
+<div class="tecla" onclick="agregar(8)">8</div>
+<div class="tecla" onclick="agregar(9)">9</div>
+
+<div class="tecla" onclick="borrar()">⌫</div>
+<div class="tecla" onclick="agregar(0)">0</div>
+
+</div>
+
+</div>
+
+<script>
+
+let numero;
+let input=document.getElementById("respuesta");
+
+const colores=["#e74c3c","#2ecc71","#3498db","#f1c40f","#9b59b6"];
+
+function nuevoEjercicio(){
+
+numero=Math.floor(Math.random()*11);
+
+document.getElementById("numA").textContent=numero;
+
+dibujar(numero,"grafA");
+dibujar(10,"graf10");
+
+input.value="";
+document.getElementById("grafRespuesta").innerHTML="";
+document.getElementById("mensaje").textContent="";
+
+}
+
+function agregar(n){
+
+input.value+=n;
+dibujarRespuesta();
+
+}
+
+function borrar(){
+
+input.value=input.value.slice(0,-1);
+dibujarRespuesta();
+
+}
+
+function dibujar(num,id){
+
+let cont=document.getElementById(id);
+cont.innerHTML="";
+
+let restante=num;
+
+while(restante>0){
+
+let fila=document.createElement("div");
+fila.className="fila";
+
+let cantidad=Math.min(3,restante);
+
+for(let i=0;i<cantidad;i++){
+
+let c=document.createElement("div");
+c.className="cuadro";
+c.style.background=colores[Math.floor(Math.random()*colores.length)];
+
+fila.appendChild(c);
+
+}
+
+cont.appendChild(fila);
+
+restante-=3;
+
+}
+
+}
+
+function dibujarRespuesta(){
+
+let r=parseInt(input.value);
+
+let cont=document.getElementById("grafRespuesta");
+cont.innerHTML="";
+
+if(isNaN(r)) return;
+
+dibujar(r,"grafRespuesta");
+
+}
+
+function verificar(){
+
+let r=parseInt(input.value);
+
+let correcto=10-numero;
+
+if(r===correcto){
+
+document.getElementById("mensaje").style.color="green";
+document.getElementById("mensaje").textContent="✔ Correcto";
+
+setTimeout(nuevoEjercicio,1200);
+
+}else{
+
+document.getElementById("mensaje").style.color="red";
+document.getElementById("mensaje").textContent="✘ Intenta otra vez";
+
+}
+
+}
+
+nuevoEjercicio();
+
+</script>
+
+</body>
+</html>
