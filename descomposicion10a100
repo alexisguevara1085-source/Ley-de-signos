@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Descomposición en Decenas y Unidades</title>
+
+<style>
+
+body{
+font-family: Arial, Helvetica, sans-serif;
+background: linear-gradient(135deg,#4facfe,#00f2fe);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+
+.container{
+background:white;
+padding:30px;
+border-radius:20px;
+width:700px;
+box-shadow:0px 10px 25px rgba(0,0,0,0.2);
+display:flex;
+gap:20px;
+}
+
+.main{
+flex:1;
+text-align:center;
+}
+
+h1{
+color:#333;
+}
+
+.numero{
+font-size:90px;
+font-weight:bold;
+color:#ff6b6b;
+margin:20px;
+}
+
+input{
+width:120px;
+font-size:30px;
+text-align:center;
+padding:10px;
+margin:10px;
+border-radius:10px;
+border:2px solid #ddd;
+}
+
+button{
+padding:12px 20px;
+font-size:20px;
+border:none;
+border-radius:10px;
+background:#4CAF50;
+color:white;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#45a049;
+}
+
+.resultado{
+font-size:24px;
+margin-top:15px;
+font-weight:bold;
+}
+
+.teclado{
+display:grid;
+grid-template-columns:repeat(3,70px);
+gap:10px;
+align-content:center;
+}
+
+.tecla{
+background:#f1f1f1;
+border-radius:10px;
+font-size:22px;
+padding:15px;
+text-align:center;
+cursor:pointer;
+box-shadow:0px 3px 6px rgba(0,0,0,0.2);
+}
+
+.tecla:hover{
+background:#ddd;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="main">
+
+<h1>Descompón el número</h1>
+
+<div class="numero" id="numero"></div>
+
+<div>
+
+<input id="decenas" placeholder="Decenas">
+<span style="font-size:30px"> + </span>
+<input id="unidades" placeholder="Unidades">
+
+</div>
+
+<button onclick="verificar()">Verificar</button>
+
+<div class="resultado" id="resultado"></div>
+
+</div>
+
+<div class="teclado">
+
+<div class="tecla" onclick="agregar(1)">1</div>
+<div class="tecla" onclick="agregar(2)">2</div>
+<div class="tecla" onclick="agregar(3)">3</div>
+
+<div class="tecla" onclick="agregar(4)">4</div>
+<div class="tecla" onclick="agregar(5)">5</div>
+<div class="tecla" onclick="agregar(6)">6</div>
+
+<div class="tecla" onclick="agregar(7)">7</div>
+<div class="tecla" onclick="agregar(8)">8</div>
+<div class="tecla" onclick="agregar(9)">9</div>
+
+<div class="tecla" onclick="borrar()">⌫</div>
+<div class="tecla" onclick="agregar(0)">0</div>
+<div class="tecla" onclick="cambiar()">⇄</div>
+
+</div>
+
+</div>
+
+<script>
+
+let numero;
+let activo="decenas";
+
+function nuevoNumero(){
+
+numero=Math.floor(Math.random()*90)+10;
+
+document.getElementById("numero").textContent=numero;
+
+document.getElementById("decenas").value="";
+document.getElementById("unidades").value="";
+document.getElementById("resultado").textContent="";
+
+}
+
+function agregar(n){
+
+let campo=document.getElementById(activo);
+
+campo.value+=n;
+
+}
+
+function borrar(){
+
+let campo=document.getElementById(activo);
+
+campo.value=campo.value.slice(0,-1);
+
+}
+
+function cambiar(){
+
+if(activo==="decenas"){
+activo="unidades";
+}else{
+activo="decenas";
+}
+
+}
+
+function verificar(){
+
+let decenas=parseInt(document.getElementById("decenas").value);
+let unidades=parseInt(document.getElementById("unidades").value);
+
+let d=Math.floor(numero/10)*10;
+let u=numero%10;
+
+if(decenas===d && unidades===u){
+
+document.getElementById("resultado").style.color="green";
+document.getElementById("resultado").textContent="✔ ¡Correcto!";
+
+setTimeout(nuevoNumero,1200);
+
+}else{
+
+document.getElementById("resultado").style.color="red";
+document.getElementById("resultado").textContent="✘ Intenta otra vez";
+
+}
+
+}
+
+nuevoNumero();
+
+</script>
+
+</body>
+</html>
