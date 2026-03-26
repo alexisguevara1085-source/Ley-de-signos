@@ -2,35 +2,88 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Páginas Alexis</title>
+<title>Plataforma de Matemáticas</title>
+
 <style>
-body{
-  font-family: Arial;
-  text-align: center;
+body {
+    font-family: Arial;
+    text-align: center;
+    background: #f4f6f9;
 }
-a{
-  display:inline-block;
-  margin:10px;
-  padding:12px 20px;
-  background:#2b7cff;
-  color:white;
-  text-decoration:none;
-  border-radius:8px;
+
+h1 {
+    margin-top: 30px;
 }
+
+.contenedor {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.boton {
+    width: 220px;
+    padding: 20px;
+    margin: 15px;
+    font-size: 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: white;
+    display: inline-block;
+    transition: 0.3s;
+}
+
+.boton:hover {
+    transform: scale(1.05);
+}
+
+/* Colores */
+.signos { background: #2b7cff; }
+.descomp { background: #28a745; }
+.calculo { background: #ff9800; }
+.comparar { background: #9c27b0; }
+.hasta { background: #e91e63; }
+
 </style>
 </head>
 
 <body>
 
-<h1>Plataforma de Matemáticas</h1>
-
+<h1>📚 Plataforma de Matemáticas</h1>
 <p>Selecciona una actividad:</p>
 
-<a href="leydesignos.html">Ley de signos</a>
+<div class="contenedor">
 
-<a href="descomposicion1a10.html">Descomposición 1 a 10</a>
+<a class="boton signos" href="leydesignos.html">
+🔢 Ley de signos
+</a>
 
-<a href="potenciacion.html">Potenciación</a>
+<a class="boton descomp" href="descomposicion1a10.html">
+🧩 Descomposición 1 a 10
+</a>
+
+<a class="boton descomp" href="descomposicion10a100.html">
+🧩 Descomposición 10 a 100
+</a>
+
+<a class="boton calculo" href="calculomental1a10.html">
+⚡ Cálculo mental 1 a 10
+</a>
+
+<a class="boton calculo" href="calculomental10.html">
+⚡ Cuanto le falta para 10
+</a>
+
+<a class="boton comparar" href="comparar.html">
+📊 Comparar números
+</a>
+
+<a class="boton hasta" href="hasta100.html">
+🎯 Para llegar a 100
+</a>
+
+</div>
 
 </body>
 </html>
