@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Completar hasta 100</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#36d1dc,#5b86e5);
+margin:0;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.container{
+background:white;
+padding:25px;
+border-radius:20px;
+width:1100px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+.menu{
+display:flex;
+justify-content:center;
+gap:15px;
+margin-bottom:15px;
+}
+
+.menu button{
+padding:10px 20px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+}
+
+.seccion{display:none;}
+.activo{display:block;}
+
+.caja100{
+width:160px;
+height:160px;
+display:grid;
+grid-template-columns:repeat(10,1fr);
+grid-template-rows:repeat(10,1fr);
+gap:1px;
+border:2px solid black;
+margin:auto;
+}
+
+.celda{background:#eee;}
+.azul{background:#3498db;}
+.verde{background:#2ecc71;}
+
+.numero{
+text-align:center;
+font-size:40px;
+font-weight:bold;
+}
+
+input{
+width:100px;
+font-size:30px;
+text-align:center;
+margin:10px;
+}
+
+.teclado{
+display:grid;
+grid-template-columns:repeat(3,70px);
+gap:10px;
+justify-content:center;
+}
+
+.tecla{
+background:#eee;
+padding:15px;
+text-align:center;
+border-radius:10px;
+cursor:pointer;
+}
+
+.resultado{
+text-align:center;
+font-size:20px;
+margin-top:10px;
+font-weight:bold;
+}
+
+/* RECTA */
+
+.recta{
+display:flex;
+justify-content:space-between;
+margin:20px;
+align-items:center;
+}
+
+.punto{
+text-align:center;
+}
+
+.linea{
+flex:1;
+height:3px;
+background:black;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="menu">
+<button onclick="mostrar('p10')">Potencias de 10</button>
+<button onclick="mostrar('recta')">Recta numérica</button>
+<button onclick="mostrar('general')">General</button>
+</div>
+
+<!-- SECCION 1 -->
+<div id="p10" class="seccion activo">
+
+<h3 style="text-align:center;">Completa hasta 100 (de 10 en 10)</h3>
+
+<div class="numero" id="num1"></div>
+<div class="caja100" id="graf1"></div>
+
+<input id="resp1">
+
+<div class="caja100" id="grafResp1"></div>
+
+<div class="resultado" id="res1"></div>
+
+</div>
+
+<!-- SECCION 2 -->
+<div id="recta" class="seccion">
+
+<h3 style="text-align:center;">Recta numérica</h3>
+
+<div class="recta" id="rectaVisual"></div>
+
+<div style="text-align:center;">
+Paso 1: <input id="r1">
+Paso 2: <input id="r2">
+</div>
+
+<div class="resultado" id="res2"></div>
+
+</div>
+
+<!-- SECCION 3 -->
+<div id="general" class="seccion">
+
+<h3 style="text-align:center;">Completa hasta 100</h3>
+
+<div class="numero" id="num3"></div>
+<div class="caja100" id="graf3"></div>
+
+<input id="resp3">
+
+<div class="caja100" id="grafResp3"></div>
+
+<div class="resultado" id="res3"></div>
+
+</div>
+
+<!-- TECLADO -->
+<div class="teclado">
+
+<div class="tecla" onclick="agregar(1)">1</div>
+<div class="tecla" onclick="agregar(2)">2</div>
+<div class="tecla" onclick="agregar(3)">3</div>
+<div class="tecla" onclick="agregar(4)">4</div>
+<div class="tecla" onclick="agregar(5)">5</div>
+<div class="tecla" onclick="agregar(6)">6</div>
+<div class="tecla" onclick="agregar(7)">7</div>
+<div class="tecla" onclick="agregar(8)">8</div>
+<div class="tecla" onclick="agregar(9)">9</div>
+<div class="tecla" onclick="borrar()">⌫</div>
+<div class="tecla" onclick="agregar(0)">0</div>
+
+</div>
+
+</div>
+
+<script>
+
+let activo=null
+document.addEventListener("click",e=>{
+if(e.target.tagName==="INPUT") activo=e.target
+})
+
+function agregar(n){
+if(!activo) return
+activo.value+=n
+verificar()
+}
+
+function borrar(){
+if(!activo) return
+activo.value=activo.value.slice(0,-1)
+}
+
+/* MENU */
+function mostrar(id){
+document.querySelectorAll(".seccion").forEach(s=>s.classList.remove("activo"))
+document.getElementById(id).classList.add("activo")
+}
+
+/* CUADRO */
+function dibujar(num,id,color){
+
+let cont=document.getElementById(id)
+cont.innerHTML=""
+
+for(let i=1;i<=100;i++){
+
+let c=document.createElement("div")
+c.className="celda"
+
+if(i<=num) c.classList.add(color)
+
+cont.appendChild(c)
+
+}
+}
+
+/* SECCION 1 */
+let n1
+
+function nuevo1(){
+
+n1=(Math.floor(Math.random()*9)+1)*10
+document.getElementById("num1").textContent=n1
+
+dibujar(n1,"graf1","azul")
+document.getElementById("resp1").value=""
+document.getElementById("grafResp1").innerHTML=""
+}
+
+function verificar(){
+
+// SECCION 1
+let r=parseInt(document.getElementById("resp1").value)
+if(!isNaN(r)){
+dibujar(n1+r,"grafResp1","verde")
+
+if(r==100-n1){
+document.getElementById("res1").textContent="✔ Correcto"
+setTimeout(nuevo1,1200)
+}
+}
+
+// SECCION 3
+let r3=parseInt(document.getElementById("resp3").value)
+if(!isNaN(r3)){
+dibujar(n3+r3,"grafResp3","verde")
+
+if(r3==100-n3){
+document.getElementById("res3").textContent="✔ Correcto"
+setTimeout(nuevo3,1200)
+}
+}
+
+// SECCION 2
+let a=parseInt(document.getElementById("r1").value)
+let b=parseInt(document.getElementById("r2").value)
+
+if(!isNaN(a)&&!isNaN(b)){
+if(a==(decenaSup-n2) && b==(100-decenaSup)){
+document.getElementById("res2").textContent="✔ Correcto"
+setTimeout(nuevo2,1200)
+}
+}
+
+}
+
+/* SECCION 2 */
+let n2,decenaInf,decenaSup
+
+function nuevo2(){
+
+n2=Math.floor(Math.random()*90)+1
+decenaInf=Math.floor(n2/10)*10
+decenaSup=decenaInf+10
+
+let cont=document.getElementById("rectaVisual")
+cont.innerHTML=""
+
+cont.innerHTML=`
+<div class="punto">0</div>
+<div class="linea"></div>
+<div class="punto">${decenaInf}</div>
+<div class="linea"></div>
+<div class="punto">${decenaSup}</div>
+<div class="linea"></div>
+<div class="punto">100</div>
+<br>
+<div style="text-align:center;width:100%;">↑ ${n2}</div>
+`
+
+document.getElementById("r1").value=""
+document.getElementById("r2").value=""
+
+}
+
+/* SECCION 3 */
+let n3
+
+function nuevo3(){
+
+n3=Math.floor(Math.random()*100)
+document.getElementById("num3").textContent=n3
+
+dibujar(n3,"graf3","azul")
+document.getElementById("resp3").value=""
+document.getElementById("grafResp3").innerHTML=""
+
+}
+
+nuevo1()
+nuevo2()
+nuevo3()
+
+</script>
+
+</body>
+</html>
