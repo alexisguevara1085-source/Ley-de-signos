@@ -256,10 +256,16 @@
         }
 
         function setS2ActiveInput(inputId) {
+            // SOLUCIÓN: Evitamos el bucle infinito. Si ya está activo, no hacemos nada.
+            if (state.s2.activeInput === inputId) return; 
+            
             state.s2.activeInput = inputId;
             render();
             // Mantener el foco
-            setTimeout(() => document.getElementById(inputId).focus(), 0);
+            setTimeout(() => {
+                const el = document.getElementById(inputId);
+                if (el) el.focus();
+            }, 10);
         }
 
         function handleS2NativeInput(id, val) {
