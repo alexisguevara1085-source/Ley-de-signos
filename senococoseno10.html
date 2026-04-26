@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrigonoGraf Pro - Visualizador de Funciones</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2563eb', // Blue for Sine
+                        secondary: '#16a34a', // Green for Cosine
+                        accent: '#ef4444', // Red for active
+                        grid: '#e0f2fe' // Light blue grid
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            overflow: hidden; /* Prevent body scroll, manage internally */
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Custom Scrollbar for table */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        .anim-dash {
+            stroke-dasharray: 10;
+            animation: dash 1s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -20;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Toggle switch styling */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #68D391;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #68D391;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col text-slate-800">
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between z-10 shadow-sm shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                <i class="fa-solid fa-wave-square"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl tracking-tight text-slate-800">TrigonoGraf <span class="text-indigo-600">Pro</span></h1>
+                <p class="text-xs text-slate-500 font-medium">Laboratorio Virtual de Gráficas</p>
+            </div>
+        </div>
+
+        <!-- Module Switcher -->
+        <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
+            <button id="btn-mode-sin" onclick="setMode('sin')" class="px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-200 bg-white text-primary shadow-sm ring-1 ring-slate-200">
+                <i class="fa-solid fa-water mr-2"></i>Función Seno
+            </button>
+            <button id="btn-mode-cos" onclick="setMode('cos')" class="px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-200 text-slate-500 hover:text-slate-700">
+                <i class="fa-solid fa-mountain mr-2"></i>Función Coseno
+            </button>
+        </div>
+
+        <!-- Utility controls -->
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-slate-600 font-medium">Modo:</span>
+                <span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded border border-amber-200 font-bold"><i class="fa-solid fa-chalkboard-user mr-1"></i>Profesor</span>
+            </div>
+            <button onclick="toggleFullscreen()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition" title="Pantalla Completa">
+                <i class="fa-solid fa-expand"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex overflow-hidden bg-slate-50 relative">
+        
+        <!-- Left & Center: Canvas Area -->
+        <div class="flex-1 flex flex-col p-4 relative h-full">
+            
+            <!-- Instructional Title -->
+            <div class="mb-4 flex justify-between items-end shrink-0">
+                <div>
+                    <h2 id="module-title" class="text-2xl font-bold text-slate-800">Construcción del Seno</h2>
+                    <p id="module-desc" class="text-sm text-slate-500 mt-1">La altura del punto en la circunferencia determina el valor de la función.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-slate-600 font-medium">Mostrar valores:</span>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="val-toggle" onclick="toggleDecimals()" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out"/>
+                        <label for="val-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer"></label>
+                    </div>
+                    <span id="toggle-label-text" class="text-sm font-bold text-slate-700 w-16">Fracción</span>
+                </div>
+            </div>
+
+            <!-- SVG Container (The Core Visual) -->
+            <div class="flex-1 glass-panel rounded-2xl overflow-hidden relative shadow-lg w-full" id="svg-wrapper">
+                <!-- SVG will be injected here via JS -->
+            </div>
+
+            <!-- Floating Controls -->
+            <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 glass-panel rounded-full px-6 py-3 flex items-center gap-4 shadow-xl z-20">
+                <button onclick="reset()" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-600 flex items-center justify-center transition tooltip" title="Reiniciar">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                
+                <div class="w-px h-6 bg-slate-300"></div>
+
+                <button onclick="prevStep()" class="w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition shadow-sm" title="Paso Anterior">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+
+                <button id="play-btn" onclick="togglePlay()" class="w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center transition shadow-lg transform hover:scale-105" title="Reproducir/Pausar">
+                    <i class="fa-solid fa-play text-xl"></i>
+                </button>
+
+                <button onclick="nextStep()" class="w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition shadow-sm" title="Siguiente Paso">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+
+                <div class="w-px h-6 bg-slate-300"></div>
+
+                <button onclick="toggleFinalCurve()" id="btn-curve" class="px-4 py-2 rounded-full hover:bg-slate-100 text-slate-600 font-medium text-sm transition flex items-center gap-2 border border-transparent hover:border-slate-200">
+                    <i class="fa-solid fa-chart-line"></i> <span id="curve-text">Mostrar Curva Completa</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: Data Table -->
+        <aside class="w-80 bg-white border-l border-slate-200 flex flex-col shadow-[left_0_0_15px_rgba(0,0,0,0.03)] z-10">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-table-list text-slate-400"></i> Tabla de Valores
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">Selecciona una fila para visualizar</p>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-2">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 rounded-tl-lg">θ (grados)</th>
+                            <th scope="col" class="px-4 py-3 rounded-tr-lg" id="th-func">sen(θ)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Calculator Hint for Cosine -->
+            <div id="calc-hint" class="p-4 bg-green-50 border-t border-green-100 hidden">
+                <div class="flex items-start gap-3">
+                    <div class="text-green-600 mt-1"><i class="fa-solid fa-calculator text-lg"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold text-green-800">Cálculo Analítico</p>
+                        <p class="text-xs text-green-700 mt-1">El coseno representa la distancia horizontal al eje Y. Comprueba los valores con tu calculadora.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <script>
+        // --- DATA & STATE ---
+        const angles = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360];
+        
+        // Mathematical exact strings
+        const exactSin = ["0", "1/2", "√3/2", "1", "√3/2", "1/2", "0", "-1/2", "-√3/2", "-1", "-√3/2", "-1/2", "0"];
+        const exactCos = ["1", "√3/2", "1/2", "0", "-1/2", "-√3/2", "-1", "-√3/2", "-1/2", "0", "1/2", "√3/2", "1"];
+
+        let state = {
+            mode: 'sin', // 'sin' or 'cos'
+            stepIndex: -1, // -1 means start, 0 is 0deg, 1 is 30deg...
+            isPlaying: false,
+            showDecimals: false,
+            showFinalCurve: false
+        };
+
+        let playInterval;
+
+        // --- CONSTANTS FOR SVG LAYOUT ---
+        const SVG_W = 1250;
+        const SVG_H = 500;
+        const GRID_SIZE = 30; // pixels per "cuadrito"
+        
+        // Circle setup
+        const CX = 200;
+        const CY = 250;
+        const R = 150; // Radius corresponds to 1 unit (5 cuadritos)
+
+        // Graph setup
+        const OX = 450; // Origin X of Cartesian Plane
+        const OY = 250; // Origin Y
+        const GRAPH_W = 720; // 360 degrees = 24 cuadritos * 30px = 720px
+        
+        // Scales
+        const scaleX = GRAPH_W / 360; // pixels per degree (2px)
+        const scaleY = R; // pixels per unit (150px)
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            renderTable();
+            drawCanvas();
+        };
+
+        // --- LOGIC FUNCTIONS ---
+
+        function setMode(mode) {
+            state.mode = mode;
+            state.stepIndex = -1;
+            state.isPlaying = false;
+            state.showFinalCurve = false;
+            updatePlayButton();
+            clearInterval(playInterval);
+            
+            // UI Updates
+            document.getElementById('btn-mode-sin').className = mode === 'sin' 
+                ? 'px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-200 bg-white text-primary shadow-sm ring-1 ring-slate-200' 
+                : 'px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-200 text-slate-500 hover:text-slate-700';
+            
+            document.getElementById('btn-mode-cos').className = mode === 'cos' 
+                ? 'px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-200 bg-white text-secondary shadow-sm ring-1 ring-slate-200' 
+                : 'px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-200 text-slate-500 hover:text-slate-700';
+
+            document.getElementById('module-title').innerText = mode === 'sin' ? 'Construcción del Seno' : 'Construcción del Coseno';
+            document.getElementById('module-desc').innerText = mode === 'sin' 
+                ? 'La altura del punto en la circunferencia determina el valor de la función.' 
+                : 'La distancia horizontal del punto determina el valor de la función.';
+            
+            document.getElementById('th-func').innerText = mode === 'sin' ? 'sen(θ)' : 'cos(θ)';
+            document.getElementById('calc-hint').style.display = mode === 'cos' ? 'block' : 'none';
+            document.getElementById('btn-curve').innerHTML = `<i class="fa-solid fa-chart-line"></i> <span id="curve-text">Mostrar Curva Completa</span>`;
+
+            renderTable();
+            drawCanvas();
+        }
+
+        function setStep(index) {
+            state.stepIndex = index;
+            if(state.stepIndex >= angles.length) state.stepIndex = angles.length - 1;
+            if(state.stepIndex < -1) state.stepIndex = -1;
+            
+            updateTableHighlight();
+            drawCanvas();
+        }
+
+        function nextStep() {
+            setStep(state.stepIndex + 1);
+        }
+
+        function prevStep() {
+            setStep(state.stepIndex - 1);
+        }
+
+        function reset() {
+            state.stepIndex = -1;
+            state.isPlaying = false;
+            state.showFinalCurve = false;
+            document.getElementById('btn-curve').innerHTML = `<i class="fa-solid fa-chart-line"></i> <span id="curve-text">Mostrar Curva Completa</span>`;
+            updatePlayButton();
+            clearInterval(playInterval);
+            setStep(-1);
+        }
+
+        function togglePlay() {
+            state.isPlaying = !state.isPlaying;
+            updatePlayButton();
+
+            if (state.isPlaying) {
+                if(state.stepIndex >= angles.length - 1) state.stepIndex = -1; // restart if at end
+                playInterval = setInterval(() => {
+                    if (state.stepIndex < angles.length - 1) {
+                        nextStep();
+                    } else {
+                        togglePlay(); // stop when reached end
+                        document.getElementById('btn-curve').click(); // Auto show curve at end
+                    }
+                }, 1200); // 1.2 seconds per step
+            } else {
+                clearInterval(playInterval);
+            }
+        }
+
+        function updatePlayButton() {
+            const btn = document.getElementById('play-btn');
+            if (state.isPlaying) {
+                btn.innerHTML = '<i class="fa-solid fa-pause text-xl"></i>';
+                btn.classList.add('bg-amber-500', 'hover:bg-amber-600');
+                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-play text-xl ml-1"></i>'; // ml-1 for optical center of play icon
+                btn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+                btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            }
+        }
+
+        function toggleDecimals() {
+            state.showDecimals = document.getElementById('val-toggle').checked;
+            document.getElementById('toggle-label-text').innerText = state.showDecimals ? 'Decimal' : 'Fracción';
+            renderTable();
+        }
+
+        function toggleFinalCurve() {
+            state.showFinalCurve = !state.showFinalCurve;
+            const btnText = document.getElementById('curve-text');
+            btnText.innerText = state.showFinalCurve ? "Ocultar Curva" : "Mostrar Curva Completa";
+            drawCanvas();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // --- UI RENDERING ---
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            angles.forEach((angle, i) => {
+                const rad = angle * Math.PI / 180;
+                let valStr = "";
+                let decimalVal = 0;
+
+                if (state.mode === 'sin') {
+                    valStr = exactSin[i];
+                    decimalVal = Math.sin(rad);
+                } else {
+                    valStr = exactCos[i];
+                    decimalVal = Math.cos(rad);
+                }
+
+                // Format decimal
+                let decStr = decimalVal.toFixed(2);
+                if(decStr === "-0.00") decStr = "0.00";
+
+                const displayVal = state.showDecimals ? decStr : valStr;
+
+                const tr = document.createElement('tr');
+                tr.id = `row-${i}`;
+                tr.className = `border-b border-slate-100 transition-colors cursor-pointer hover:bg-slate-100 ${state.stepIndex === i ? (state.mode === 'sin' ? 'bg-blue-50 border-l-4 border-l-primary' : 'bg-green-50 border-l-4 border-l-secondary') : 'border-l-4 border-l-transparent'}`;
+                tr.onclick = () => {
+                    state.isPlaying = false;
+                    updatePlayButton();
+                    clearInterval(playInterval);
+                    setStep(i);
+                };
+
+                tr.innerHTML = `
+                    <td class="px-4 py-2 font-medium text-slate-700">${angle}°</td>
+                    <td class="px-4 py-2 font-bold ${state.stepIndex === i ? (state.mode === 'sin' ? 'text-primary' : 'text-secondary') : 'text-slate-600'}">${displayVal}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateTableHighlight();
+        }
+
+        function updateTableHighlight() {
+            angles.forEach((_, i) => {
+                const row = document.getElementById(`row-${i}`);
+                if (row) {
+                    if (i === state.stepIndex) {
+                        row.className = `border-b border-slate-100 transition-colors cursor-pointer ${state.mode === 'sin' ? 'bg-blue-50 border-l-4 border-l-primary' : 'bg-green-50 border-l-4 border-l-secondary'}`;
+                        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else if (i < state.stepIndex) {
+                        row.className = `border-b border-slate-100 transition-colors cursor-pointer bg-slate-50 border-l-4 border-l-transparent text-slate-400`;
+                    } else {
+                        row.className = `border-b border-slate-100 transition-colors cursor-pointer hover:bg-slate-100 border-l-4 border-l-transparent`;
+                    }
+                }
+            });
+        }
+
+        // --- SVG DRAWING ENGINE ---
+
+        function drawCanvas() {
+            const container = document.getElementById('svg-wrapper');
+            const mainColor = state.mode === 'sin' ? '#2563eb' : '#16a34a';
+            const lightColor = state.mode === 'sin' ? 'rgba(37, 99, 235, 0.2)' : 'rgba(22, 163, 74, 0.2)';
+            
+            let svg = `<svg viewBox="0 0 ${SVG_W} ${SVG_H}" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">`;
+            
+            // Defs for arrows
+            svg += `
+            <defs>
+                <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L9,3 z" fill="#64748b" />
+                </marker>
+                <marker id="arrowHeadRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L9,3 z" fill="#ef4444" />
+                </marker>
+            </defs>`;
+
+            // --- 1. DRAW GRAPH PAPER GRID ---
+            
+            // Vertical lines for graph (every 30 degrees = 2 cuadritos)
+            for (let x = 0; x <= GRAPH_W; x += GRID_SIZE) {
+                const px = OX + x;
+                svg += `<line x1="${px}" y1="50" x2="${px}" y2="${SVG_H - 50}" stroke="#e0f2fe" stroke-width="1"/>`;
+                
+                // Angle labels every 30 deg (60px)
+                if (x % (GRID_SIZE * 2) === 0 && x <= GRAPH_W) {
+                    const angle = x / scaleX;
+                    if(angle > 0) {
+                        svg += `<text x="${px}" y="${OY + 20}" text-anchor="middle" font-size="10" fill="#94a3b8">${angle}°</text>`;
+                        svg += `<line x1="${px}" y1="${OY - 3}" x2="${px}" y2="${OY + 3}" stroke="#64748b" stroke-width="1"/>`;
+                    }
+                }
+            }
+
+            // Horizontal lines for graph (every 0.2 units = 1 cuadrito)
+            for (let y = -1; y <= 1.01; y += 0.2) {
+                const py = OY - (y * scaleY);
+                svg += `<line x1="${OX}" y1="${py}" x2="${OX + GRAPH_W}" y2="${py}" stroke="#e0f2fe" stroke-width="1"/>`;
+                
+                // Labels for Y axis
+                if (Math.abs(y) > 0.01) {
+                    const displayY = Math.abs(y) < 0.01 ? "0" : y.toFixed(1);
+                    svg += `<text x="${OX - 10}" y="${py + 4}" text-anchor="end" font-size="10" fill="#94a3b8">${displayY}</text>`;
+                    svg += `<line x1="${OX - 3}" y1="${py}" x2="${OX + 3}" y2="${py}" stroke="#64748b" stroke-width="1"/>`;
+                }
+            }
+
+            // --- 2. DRAW AXES ---
+            
+            // Circle Axes
+            svg += `<line x1="${CX - R - 30}" y1="${CY}" x2="${CX + R + 30}" y2="${CY}" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowHead)"/>`; // X
+            svg += `<line x1="${CX}" y1="${CY + R + 30}" x2="${CX}" y2="${CY - R - 30}" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowHead)"/>`; // Y
+            svg += `<text x="${CX + R + 35}" y="${CY + 4}" font-size="12" fill="#64748b" font-weight="bold">X</text>`;
+            svg += `<text x="${CX}" y="${CY - R - 35}" text-anchor="middle" font-size="12" fill="#64748b" font-weight="bold">Y</text>`;
+
+            // Graph Axes
+            svg += `<line x1="${OX - 20}" y1="${OY}" x2="${OX + GRAPH_W + 40}" y2="${OY}" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowHead)"/>`; // X
+            svg += `<line x1="${OX}" y1="${OY + R + 30}" x2="${OX}" y2="${OY - R - 30}" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrowHead)"/>`; // Y
+            svg += `<text x="${OX + GRAPH_W + 45}" y="${OY + 4}" font-size="12" fill="#64748b" font-weight="bold">θ</text>`;
+            if(state.mode === 'sin') {
+                svg += `<text x="${OX}" y="${OY - R - 35}" text-anchor="middle" font-size="12" fill="#2563eb" font-weight="bold">sen(θ)</text>`;
+            } else {
+                svg += `<text x="${OX}" y="${OY - R - 35}" text-anchor="middle" font-size="12" fill="#16a34a" font-weight="bold">cos(θ)</text>`;
+            }
+
+
+            // --- 3. DRAW STATIC CIRCLE ---
+            svg += `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#94a3b8" stroke-width="1.5"/>`;
+            
+            // Degree markers on circle
+            angles.forEach(angle => {
+                const rad = angle * Math.PI / 180;
+                const px = CX + R * Math.cos(rad);
+                const py = CY - R * Math.sin(rad);
+                svg += `<circle cx="${px}" cy="${py}" r="2" fill="#94a3b8"/>`;
+                
+                // Labels for 0, 90, 180, 270
+                if(angle % 90 === 0 && angle < 360) {
+                    const tx = CX + (R + 15) * Math.cos(rad);
+                    const ty = CY - (R + 15) * Math.sin(rad) + 4;
+                    svg += `<text x="${tx}" y="${ty}" text-anchor="middle" font-size="10" fill="#94a3b8">${angle}°</text>`;
+                }
+            });
+
+
+            // --- 4. DRAW FINAL CONTINUOUS CURVE (If enabled) ---
+            if (state.showFinalCurve) {
+                let pathD = `M ${OX} ${OY - (state.mode === 'sin' ? 0 : R)}`;
+                for(let a = 0; a <= 360; a += 5) {
+                    const rad = a * Math.PI / 180;
+                    const val = state.mode === 'sin' ? Math.sin(rad) : Math.cos(rad);
+                    const px = OX + (a * scaleX);
+                    const py = OY - (val * scaleY);
+                    pathD += ` L ${px} ${py}`;
+                }
+                svg += `<path d="${pathD}" fill="none" stroke="${lightColor}" stroke-width="4" stroke-linecap="round"/>`;
+            }
+
+
+            // --- 5. DRAW DYNAMIC PROGRESSIVE ELEMENTS ---
+            
+            // Draw previous points and connecting lines up to current step
+            if (state.stepIndex >= 0) {
+                let pathD = "";
+                for (let i = 0; i <= state.stepIndex; i++) {
+                    const angle = angles[i];
+                    const rad = angle * Math.PI / 180;
+                    const val = state.mode === 'sin' ? Math.sin(rad) : Math.cos(rad);
+                    
+                    const gX = OX + (angle * scaleX);
+                    const gY = OY - (val * scaleY);
+
+                    // Path construction
+                    if (i === 0) pathD += `M ${gX} ${gY}`;
+                    else pathD += ` L ${gX} ${gY}`;
+
+                    // Draw past points
+                    if (i < state.stepIndex) {
+                        svg += `<circle cx="${gX}" cy="${gY}" r="4" fill="${mainColor}" opacity="0.5"/>`;
+                    }
+                }
+
+                // Draw solid line connecting points so far
+                if(pathD) {
+                     svg += `<path d="${pathD}" fill="none" stroke="${mainColor}" stroke-width="2" stroke-linejoin="round"/>`;
+                }
+
+                // --- Draw Current Active Step ---
+                const activeAngle = angles[state.stepIndex];
+                const aRad = activeAngle * Math.PI / 180;
+                
+                const cX = CX + R * Math.cos(aRad);
+                const cY = CY - R * Math.sin(aRad);
+                
+                const val = state.mode === 'sin' ? Math.sin(aRad) : Math.cos(aRad);
+                const gX = OX + (activeAngle * scaleX);
+                const gY = OY - (val * scaleY);
+
+                // Highlight active radius
+                svg += `<line x1="${CX}" y1="${CY}" x2="${cX}" y2="${cY}" stroke="#ef4444" stroke-width="2" class="fade-in"/>`;
+                
+                // Active point on circle
+                svg += `<circle cx="${cX}" cy="${cY}" r="6" fill="#ef4444" class="fade-in"/>`;
+                
+                // Active angle arc
+                if (activeAngle > 0) {
+                     // Path for arc
+                     const arcR = 30;
+                     const arcEndX = CX + arcR * Math.cos(aRad);
+                     const arcEndY = CY - arcR * Math.sin(aRad);
+                     const largeArcFlag = activeAngle > 180 ? 1 : 0;
+                     svg += `<path d="M ${CX + arcR} ${CY} A ${arcR} ${arcR} 0 ${largeArcFlag} 0 ${arcEndX} ${arcEndY}" fill="none" stroke="#ef4444" stroke-width="1.5"/>`;
+                     
+                     // Text for active angle inside circle
+                     const textR = 45;
+                     const textX = CX + textR * Math.cos(aRad/2);
+                     const textY = CY - textR * Math.sin(aRad/2) + 4;
+                     svg += `<text x="${textX}" y="${textY}" text-anchor="middle" font-size="11" fill="#ef4444" font-weight="bold">${activeAngle}°</text>`;
+                }
+
+                // Mode Specific Projections
+                if (state.mode === 'sin') {
+                    // SINE: Show Y height in circle
+                    svg += `<line x1="${cX}" y1="${cY}" x2="${cX}" y2="${CY}" stroke="${mainColor}" stroke-width="3" opacity="0.7"/>`;
+                    
+                    // SINE: Dashed projection to graph Y axis
+                    svg += `<line x1="${cX}" y1="${cY}" x2="${OX}" y2="${cY}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,5" class="anim-dash fade-in"/>`;
+                    // Project from Y axis to Point
+                    svg += `<line x1="${OX}" y1="${cY}" x2="${gX}" y2="${gY}" stroke="${mainColor}" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.5"/>`;
+
+                    // Vertical drop line to X axis on graph
+                    svg += `<line x1="${gX}" y1="${gY}" x2="${gX}" y2="${OY}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>`;
+                    
+                } else {
+                    // COSINE: Show X width in circle
+                    svg += `<line x1="${CX}" y1="${cY}" x2="${cX}" y2="${cY}" stroke="${mainColor}" stroke-width="3" opacity="0.7"/>`;
+                    // Drop down to axis for clarity
+                    svg += `<line x1="${cX}" y1="${cY}" x2="${cX}" y2="${CY}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>`;
+
+                    // COSINE: No direct horizontal projection makes sense geometrically for cosine on standard axes.
+                    // Instead, show "Calculation" Box near the graph point
+                    let dispVal = state.showDecimals ? val.toFixed(2) : exactCos[state.stepIndex];
+                    if(dispVal === "-0.00") dispVal = "0.00";
+                    
+                    svg += `
+                        <g class="fade-in" transform="translate(${gX + 10}, ${gY - 20})">
+                            <rect x="0" y="0" width="100" height="24" rx="4" fill="white" stroke="${mainColor}" stroke-width="1" filter="drop-shadow(0 2px 2px rgba(0,0,0,0.1))"/>
+                            <text x="50" y="16" text-anchor="middle" font-size="11" font-family="monospace" fill="${mainColor}"><tspan font-weight="bold">cos(${activeAngle}°)</tspan> = ${dispVal}</text>
+                        </g>
+                    `;
+                    
+                    // Show projection from calculated height
+                    svg += `<line x1="${OX}" y1="${gY}" x2="${gX}" y2="${gY}" stroke="${mainColor}" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.5"/>`;
+                    // Vertical drop line to X axis on graph
+                    svg += `<line x1="${gX}" y1="${gY}" x2="${gX}" y2="${OY}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>`;
+                }
+
+                // Active point on graph
+                svg += `<circle cx="${gX}" cy="${gY}" r="6" fill="#ef4444" class="fade-in">
+                            <animate attributeName="r" values="6;8;6" dur="1s" repeatCount="indefinite" />
+                        </circle>`;
+            }
+            
+            svg += `</svg>`;
+            container.innerHTML = svg;
+        }
+
+    </script>
+</body>
+</html>
