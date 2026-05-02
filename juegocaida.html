@@ -105,14 +105,18 @@
         .heart {
             color: #ff4d4f;
             text-shadow: 0 0 5px rgba(255,0,0,0.5);
-            transition: transform 0.3s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .heart.lost {
             color: #cbd5e1;
             text-shadow: none;
-            transform: scale(0.8);
+            transform: scale(0.7) rotate(-15deg);
+            opacity: 0.5;
         }
 
+        /* ━━━━━━━━━━━━━━━━━━━
+           MEJORA: Panel de operación ampliado y sin saltos de línea
+           ━━━━━━━━━━━━━━━━━━━ */
         #challenge-panel {
             position: absolute;
             bottom: 20px;
@@ -121,6 +125,14 @@
             z-index: 20;
             pointer-events: none;
             transition: transform 0.2s;
+            width: 92%;
+            max-width: 500px;
+        }
+
+        #challenge-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .bounce { animation: bounce 0.4s ease; }
@@ -152,7 +164,6 @@
             <h1 class="text-4xl md:text-5xl font-black text-blue-600 mb-2 drop-shadow-sm tracking-tight">Math Arcade</h1>
             <p class="text-gray-600 mb-6 font-medium">Selecciona las operaciones que deseas practicar:</p>
             
-            <!-- Grid de Checkboxes -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                 <label class="cursor-pointer relative btn-hover">
                     <input type="checkbox" value="sumas" class="mode-checkbox peer sr-only" checked>
@@ -215,16 +226,14 @@
             <button onclick="startSelectedGame()" class="w-full btn-hover bg-gradient-to-b from-blue-400 to-blue-600 text-white py-4 rounded-2xl font-bold text-2xl shadow-lg shadow-blue-300/50 border-b-4 border-blue-700">
                 ¡COMENZAR JUEGO!
             </button>
-            <p class="text-sm text-gray-500 mt-4 font-medium">Toca la figura correcta. ¡Busca bien, puede que no sea la primera en caer!</p>
+            <p class="text-sm text-gray-500 mt-4 font-medium">Resuelve los retos para avanzar. ¡Cada 8 aciertos tendrás oportunidad de ganar vida!</p>
         </div>
     </div>
 
     <!-- UI del Juego -->
     <div id="game-ui" class="ui-layer h-full hidden flex-col justify-between">
         
-        <!-- Top HUD Mejorado y Responsivo -->
         <div class="glass-panel mx-2 md:mx-4 mt-2 md:mt-4 p-2 md:p-3 rounded-2xl flex flex-wrap justify-between items-center gap-2 md:gap-4 clickable">
-            <!-- Bloque Izquierdo: Botón Menú, Nivel, Puntos -->
             <div class="flex items-center gap-3 md:gap-6 w-full md:w-auto justify-between md:justify-start">
                 <button onclick="returnToMenu()" class="btn-hover bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 md:py-2 rounded-xl font-bold text-sm md:text-base border-b-2 md:border-b-4 border-slate-400 transition-colors">
                     ⬅ MENÚ
@@ -233,23 +242,19 @@
                 <div class="text-sm md:text-xl font-bold text-gray-700">Puntos <span id="score-display" class="text-emerald-600 text-lg md:text-2xl">0</span></div>
             </div>
 
-            <!-- Bloque Derecho: Panel de Estadísticas y Vidas -->
             <div class="flex items-center justify-between w-full md:w-auto gap-4">
                 <div class="flex flex-col md:flex-row gap-1 md:gap-3 text-xs md:text-sm font-bold bg-white/50 p-1 md:p-2 rounded-xl border border-white/80">
                     <div class="text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">✔ Correctas: <span id="correct-display">0</span></div>
                     <div class="text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">✖ Incorrectas: <span id="incorrect-display">0</span></div>
                 </div>
                 <div class="flex text-2xl md:text-3xl space-x-1" id="lives-display">
-                    <span class="heart">❤️</span>
-                    <span class="heart">❤️</span>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Challenge -->
-        <div id="challenge-panel" class="glass-panel px-10 py-4 rounded-3xl text-center mb-6">
-            <div class="text-sm md:text-base font-bold text-gray-500 uppercase tracking-widest mb-1">RETO ACTUAL</div>
-            <div id="challenge-text" class="text-5xl md:text-6xl font-black text-gray-900 tracking-tight drop-shadow-sm">--</div>
+        <div id="challenge-panel" class="glass-panel px-6 md:px-10 py-4 rounded-3xl text-center mb-6">
+            <div id="challenge-header" class="text-xs md:text-base font-bold text-gray-500 uppercase tracking-widest mb-1">RETO ACTUAL</div>
+            <div id="challenge-text" class="text-3xl md:text-6xl font-black text-gray-900 tracking-tight drop-shadow-sm">--</div>
             <div id="challenge-subtext" class="text-base md:text-lg text-blue-600 font-bold hidden mt-1">Toca el primer número</div>
         </div>
     </div>
@@ -258,7 +263,7 @@
     <div id="game-over-screen" class="ui-layer clickable h-full hidden flex-col items-center justify-center bg-black/70 backdrop-blur-md transition-opacity duration-500 z-50">
         <div class="glass-panel p-8 rounded-3xl max-w-sm w-[90%] text-center bg-white/95">
             <h2 class="text-5xl font-black text-red-500 mb-2 drop-shadow-sm">¡Game Over!</h2>
-            <p class="text-gray-600 mb-4 text-lg font-medium">Fin del juego. ¡Sigue practicando!</p>
+            <p class="text-gray-600 mb-4 text-lg font-medium">Fin del juego. ¡Buen esfuerzo!</p>
             <div class="text-6xl font-black text-emerald-500 mb-2 drop-shadow-md" id="final-score">0</div>
             <p class="text-sm text-gray-500 font-bold mb-6">Nivel alcanzado: <span id="final-level">1</span></p>
             
@@ -270,7 +275,7 @@
     </div>
 
     <script>
-        /** LÓGICA DE AUDIO (Sintetizador sin assets externos) */
+        /** LÓGICA DE AUDIO */
         const AudioEngine = {
             ctx: null,
             init() {
@@ -286,11 +291,9 @@
                 const gain = this.ctx.createGain();
                 osc.type = type;
                 osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                
                 gain.gain.setValueAtTime(0, this.ctx.currentTime);
                 gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.05);
                 gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-                
                 osc.connect(gain);
                 gain.connect(this.ctx.destination);
                 osc.start();
@@ -309,9 +312,8 @@
             playExtraLife() {
                 this.init();
                 this.playTone(400, 'sine', 0.1, 0.1);
-                setTimeout(() => this.playTone(500, 'sine', 0.1, 0.1), 100);
-                setTimeout(() => this.playTone(600, 'sine', 0.1, 0.1), 200);
-                setTimeout(() => this.playTone(800, 'sine', 0.4, 0.1), 300);
+                setTimeout(() => this.playTone(600, 'sine', 0.1, 0.1), 100);
+                setTimeout(() => this.playTone(1000, 'sine', 0.4, 0.15), 200);
             },
             playGameOver() {
                 this.init();
@@ -321,7 +323,7 @@
             }
         };
 
-        /** LÓGICA DEL JUEGO Y CANVAS */
+        /** LÓGICA DEL JUEGO */
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         let gameLoopId;
@@ -332,21 +334,25 @@
         let gameState = {
             modes: [],
             lives: 2,
+            maxLives: 4,
             score: 0,
             level: 1,
-            correctAnswers: 0,    // NUEVO ESTADÍSTICO
-            incorrectAnswers: 0,  // NUEVO ESTADÍSTICO
+            correctAnswers: 0,
+            incorrectAnswers: 0,
+            lifeCounter: 0, // ━━━━━━━━━━━━━━━━━━━ MEJORA: Contador de vida extra
             challengesCompleted: 0,
             active: false,
+            isPaused: false, // ━━━━━━━━━━━━━━━━━━━ MEJORA: Pausa tras fallo
+            pauseTimer: 0,
             currentChallenge: null,
             figures: [],
             particles: [],
             spawnTimer: 0,
-            spawnRate: 2000,
+            spawnRate: 2200,
             baseSpeed: 1,
             selectedNumber: null,
             challengeId: 0,
-            wrongSpawnsSinceCorrect: 0 // Controla cuantas figuras malas han caído
+            wrongSpawnsSinceCorrect: 0
         };
 
         function resizeCanvas() {
@@ -390,7 +396,7 @@
 
         function generateChallenge() {
             gameState.challengeId = Date.now();
-            gameState.wrongSpawnsSinceCorrect = 0; // Reiniciar contador de distracciones
+            gameState.wrongSpawnsSinceCorrect = 0;
             gameState.selectedNumber = null;
 
             if (gameState.figures.length > 0) {
@@ -398,53 +404,65 @@
                 gameState.figures = [];
             }
             
-            gameState.spawnTimer = gameState.spawnRate;
+            // Si no estamos en pausa, reiniciar spawn timer. Si estamos en pausa, updateAndDraw lo maneja
+            if (!gameState.isPaused) {
+                gameState.spawnTimer = gameState.spawnRate;
+            }
 
-            const randomMode = gameState.modes[Math.floor(Math.random() * gameState.modes.length)];
-            gameState.currentChallenge = MathLogic[randomMode]();
-            
             const panelText = document.getElementById('challenge-text');
             const subText = document.getElementById('challenge-subtext');
-            
-            panelText.innerText = gameState.currentChallenge.text;
+            const headerText = document.getElementById('challenge-header');
+
+            // ━━━━━━━━━━━━━━━━━━━
+            // MEJORA: Sistema de vida cada 8 aciertos
+            // ━━━━━━━━━━━━━━━━━━━
+            if (gameState.lifeCounter >= 8 && gameState.lives < gameState.maxLives) {
+                gameState.lifeCounter = 0; // Reiniciar contador
+                const randomMode = gameState.modes[Math.floor(Math.random() * gameState.modes.length)];
+                gameState.currentChallenge = MathLogic[randomMode]();
+                gameState.currentChallenge.isLifeChallenge = true;
+                
+                headerText.innerText = "💖 ¡RETO DE VIDA! 💖";
+                headerText.style.color = "#ff4d4f";
+                panelText.innerText = gameState.currentChallenge.text;
+                subText.classList.add('hidden');
+            } else {
+                const randomMode = gameState.modes[Math.floor(Math.random() * gameState.modes.length)];
+                gameState.currentChallenge = MathLogic[randomMode]();
+                gameState.currentChallenge.isLifeChallenge = false;
+
+                headerText.innerText = "RETO ACTUAL";
+                headerText.style.color = "";
+                panelText.innerText = gameState.currentChallenge.text;
+
+                if (gameState.currentChallenge.type === 'decompose') {
+                    subText.classList.remove('hidden');
+                    subText.innerText = "Toca el primer número";
+                    subText.className = "text-base md:text-lg text-blue-600 font-bold mt-1";
+                } else {
+                    subText.classList.add('hidden');
+                }
+            }
             
             const panel = document.getElementById('challenge-panel');
             panel.classList.remove('bounce');
             void panel.offsetWidth; 
             panel.classList.add('bounce');
-
-            if (gameState.currentChallenge.type === 'decompose') {
-                subText.classList.remove('hidden');
-                subText.innerText = "Toca el primer número";
-                subText.className = "text-base md:text-lg text-blue-600 font-bold mt-1";
-            } else {
-                subText.classList.add('hidden');
-            }
         }
 
-        // Modificada para ubicar en carriles y evitar que se solapen si caen varias a la vez
-        function createFigure(forceCorrect = false, forceLife = false, spawnIndex = 0, totalSpawning = 1) {
+        function createFigure(forceCorrect = false, spawnIndex = 0, totalSpawning = 1) {
             const width = window.innerWidth;
-            const size = Math.random() * 30 + 70; // 70px - 100px para que quepan varias
-            
-            // Asignación de X en base a carriles para distribución equilibrada
+            const size = Math.random() * 30 + 80;
             const segmentWidth = width / totalSpawning;
             const minX = spawnIndex * segmentWidth + size;
             const maxX = (spawnIndex + 1) * segmentWidth - size;
-            let x = Math.random() * (width - size * 2) + size; // fallback
+            let x = Math.random() * (width - size * 2) + size; 
+            if (maxX > minX) x = Math.random() * (maxX - minX) + minX;
             
-            if (maxX > minX) {
-                x = Math.random() * (maxX - minX) + minX;
-            }
-            
-            let y = -size - (Math.random() * 60); // Escalonamiento vertical leve
-            
-            let value, isCorrect = false, isLife = false;
+            let y = -size - (Math.random() * 80);
+            let value, isCorrect = false;
 
-            if (forceLife) {
-                isLife = true;
-                value = 'VIDA';
-            } else if (gameState.currentChallenge.type === 'decompose') {
+            if (gameState.currentChallenge.type === 'decompose') {
                 const target = gameState.currentChallenge.answer;
                 if (forceCorrect) value = Math.floor(Math.random() * (target - 1)) + 1;
                 else value = Math.floor(Math.random() * (target + 5));
@@ -466,12 +484,11 @@
                 challengeId: gameState.challengeId,
                 x, y,
                 size,
-                type: isLife ? 'heart' : SHAPES[Math.floor(Math.random() * SHAPES.length)],
-                color: isLife ? '#ff4d4f' : COLORS[Math.floor(Math.random() * COLORS.length)],
-                speed: gameState.baseSpeed + Math.random() * 0.8 + (gameState.level * 0.2),
+                type: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+                color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                speed: gameState.baseSpeed + Math.random() * 0.5 + (gameState.level * 0.1),
                 value,
                 isCorrect,
-                isLife,
                 rotation: 0,
                 rotSpeed: (Math.random() - 0.5) * 0.05
             });
@@ -495,9 +512,7 @@
             if (type === 'circle') ctx.arc(x, y, size/2, 0, Math.PI * 2);
             else if (type === 'square') ctx.roundRect(x - size/2, y - size/2, size, size, 16);
             else if (type === 'triangle') {
-                ctx.moveTo(x, y - size/2);
-                ctx.lineTo(x + size/2, y + size/2);
-                ctx.lineTo(x - size/2, y + size/2);
+                ctx.moveTo(x, y - size/2); ctx.lineTo(x + size/2, y + size/2); ctx.lineTo(x - size/2, y + size/2);
                 ctx.closePath();
             } else if (type === 'star') {
                 const spikes = 5, outerRadius = size / 2, innerRadius = size / 4;
@@ -509,8 +524,7 @@
                     if (i === 0) ctx.moveTo(posX, posY); else ctx.lineTo(posX, posY);
                 }
                 ctx.closePath();
-            } else if (type === 'heart') ctx.arc(x, y, size/2, 0, Math.PI*2);
-            
+            }
             ctx.fill();
             ctx.lineWidth = 5;
             ctx.strokeStyle = 'rgba(255,255,255,0.8)';
@@ -519,107 +533,91 @@
 
         function updateAndDraw() {
             if (!gameState.active) return;
-
             const width = window.innerWidth;
             const height = window.innerHeight;
             ctx.clearRect(0, 0, width, height);
 
-            gameState.spawnTimer += 16;
-            if (gameState.spawnTimer > gameState.spawnRate) {
-                gameState.spawnTimer = 0;
-                
-                // SISTEMA DE CAÍDA MÚLTIPLE BASADO EN NIVEL
-                // Nivel 1: cae 1. Nivel 2-3: caen hasta 2. Nivel 4-5: caen hasta 3.
-                let maxSpawns = Math.min(4, 1 + Math.floor(gameState.level / 2));
-                let spawnCount = Math.floor(Math.random() * maxSpawns) + 1;
-                
-                let hasCorrect = gameState.figures.some(f => f.isCorrect && f.challengeId === gameState.challengeId);
-                let correctSpawnedThisTick = false;
+            // ━━━━━━━━━━━━━━━━━━━
+            // MEJORA: Lógica de pausa de 2 segundos
+            // ━━━━━━━━━━━━━━━━━━━
+            if (gameState.isPaused) {
+                gameState.pauseTimer -= 16;
+                if (gameState.pauseTimer <= 0) {
+                    gameState.isPaused = false;
+                    gameState.spawnTimer = gameState.spawnRate; // Iniciar caída inmediatamente después de la pausa
+                }
+                // Dibujar solo partículas durante la pausa
+            } else {
+                gameState.spawnTimer += 16;
+                if (gameState.spawnTimer > gameState.spawnRate) {
+                    gameState.spawnTimer = 0;
+                    let maxSpawns = Math.min(4, 1 + Math.floor(gameState.level / 3)); 
+                    let spawnCount = Math.floor(Math.random() * maxSpawns) + 1;
+                    let hasCorrect = gameState.figures.some(f => f.isCorrect && f.challengeId === gameState.challengeId);
+                    let correctSpawnedThisTick = false;
 
-                for (let i = 0; i < spawnCount; i++) {
-                    // Vida extra (muy rara)
-                    if (Math.random() < 0.02 && gameState.lives < 3) {
-                        createFigure(false, true, i, spawnCount);
-                        continue;
+                    for (let i = 0; i < spawnCount; i++) {
+                        let forceCorrect = false;
+                        if (gameState.currentChallenge.type === 'decompose') {
+                            hasCorrect = gameState.figures.filter(f => f.challengeId === gameState.challengeId).length > 2;
+                            if (!hasCorrect || Math.random() < 0.35) forceCorrect = true;
+                        } else {
+                            if (!hasCorrect && !correctSpawnedThisTick) {
+                                if (Math.random() < 0.3 || gameState.wrongSpawnsSinceCorrect >= 2) {
+                                    forceCorrect = true;
+                                    correctSpawnedThisTick = true;
+                                    gameState.wrongSpawnsSinceCorrect = 0;
+                                } else {
+                                    gameState.wrongSpawnsSinceCorrect++;
+                                }
+                            }
+                        }
+                        createFigure(forceCorrect, i, spawnCount);
                     }
+                }
 
-                    let forceCorrect = false;
+                for (let i = gameState.figures.length - 1; i >= 0; i--) {
+                    let fig = gameState.figures[i];
+                    fig.y += fig.speed;
+                    fig.rotation += fig.rotSpeed;
+                    ctx.save();
+                    ctx.translate(fig.x, fig.y);
+                    ctx.rotate(fig.rotation);
+                    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+                    ctx.shadowBlur = 15;
+                    ctx.fillStyle = fig.color;
+                    
+                    if (gameState.selectedNumber === fig) {
+                        ctx.shadowColor = 'rgba(255, 255, 255, 1)';
+                        ctx.shadowBlur = 20;
+                        ctx.lineWidth = 6;
+                        ctx.strokeStyle = '#3B82F6';
+                    }
+                    drawShape(ctx, fig.type, 0, 0, fig.size);
+                    ctx.shadowColor = 'transparent';
+                    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+                    let fontSize = fig.size * 0.42;
+                    ctx.font = `900 ${fontSize}px Fredoka, sans-serif`;
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText(fig.value, 0, 0);
+                    ctx.restore();
 
-                    if (gameState.currentChallenge.type === 'decompose') {
-                        hasCorrect = gameState.figures.filter(f => f.challengeId === gameState.challengeId).length > 2;
-                        if (!hasCorrect || Math.random() < 0.35) forceCorrect = true;
-                    } else {
-                        // ALEATORIEDAD REAL: La respuesta correcta no es obligatoria de inmediato
-                        if (!hasCorrect && !correctSpawnedThisTick) {
-                            // Si han salido 3 o más tandas sin la respuesta, forzarla para que el jugador no desespere
-                            if (Math.random() < 0.3 || gameState.wrongSpawnsSinceCorrect >= 3) {
-                                forceCorrect = true;
-                                correctSpawnedThisTick = true;
-                                gameState.wrongSpawnsSinceCorrect = 0;
-                            } else {
-                                gameState.wrongSpawnsSinceCorrect++;
+                    if (fig.y - fig.size > height) {
+                        let wasCorrect = fig.isCorrect;
+                        let isNormalType = gameState.currentChallenge.type === 'normal';
+                        gameState.figures.splice(i, 1);
+                        if (wasCorrect && isNormalType && fig.challengeId === gameState.challengeId) {
+                            loseLife();
+                            if (gameState.lives > 0) {
+                                generateChallenge(); 
+                                break; 
                             }
                         }
                     }
-
-                    createFigure(forceCorrect, false, i, spawnCount);
                 }
             }
 
-            for (let i = gameState.figures.length - 1; i >= 0; i--) {
-                let fig = gameState.figures[i];
-                fig.y += fig.speed;
-                fig.rotation += fig.rotSpeed;
-
-                ctx.save();
-                ctx.translate(fig.x, fig.y);
-                ctx.rotate(fig.rotation);
-                
-                ctx.shadowColor = 'rgba(0,0,0,0.15)';
-                ctx.shadowBlur = 15;
-                ctx.shadowOffsetY = 8;
-                ctx.fillStyle = fig.color;
-                
-                if (fig.isLife) {
-                    ctx.shadowColor = 'rgba(255, 77, 79, 0.9)';
-                    ctx.shadowBlur = 25;
-                }
-                if (gameState.selectedNumber === fig) {
-                    ctx.shadowColor = 'rgba(255, 255, 255, 1)';
-                    ctx.shadowBlur = 20;
-                    ctx.lineWidth = 6;
-                    ctx.strokeStyle = '#3B82F6';
-                }
-
-                drawShape(ctx, fig.type, 0, 0, fig.size);
-                
-                ctx.shadowColor = 'transparent';
-                ctx.fillStyle = fig.isLife ? '#ffffff' : 'rgba(0,0,0,0.8)';
-                let fontSize = fig.isLife ? fig.size * 0.28 : fig.size * 0.45;
-                ctx.font = `900 ${fontSize}px Fredoka, sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(fig.value, 0, 0);
-                
-                ctx.restore();
-
-                if (fig.y - fig.size > height) {
-                    let wasCorrect = fig.isCorrect;
-                    let isNormalType = gameState.currentChallenge.type === 'normal';
-                    
-                    gameState.figures.splice(i, 1);
-
-                    // Penalización por dejar caer la respuesta correcta del reto actual
-                    if (wasCorrect && isNormalType && fig.challengeId === gameState.challengeId) {
-                        loseLife();
-                        if (gameState.lives > 0) {
-                            generateChallenge(); 
-                            break; 
-                        }
-                    }
-                }
-            }
-
+            // Las partículas siempre se dibujan para que los efectos de "limpieza" se vean
             for (let i = gameState.particles.length - 1; i >= 0; i--) {
                 let p = gameState.particles[i];
                 p.x += p.vx; p.y += p.vy; p.life -= 0.025;
@@ -628,15 +626,12 @@
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
                 ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.fill(); ctx.globalAlpha = 1;
             }
-
             gameLoopId = requestAnimationFrame(updateAndDraw);
         }
 
-        /** SISTEMA EXACTO DE DETECCIÓN MULTIPLATAFORMA */
         function processInteraction(clientX, clientY) {
-            if (!gameState.active) return;
+            if (!gameState.active || gameState.isPaused) return; // MEJORA: Bloquear interacción en pausa
             AudioEngine.init();
-
             const rect = canvas.getBoundingClientRect();
             const scaleX = (canvas.width / window.devicePixelRatio) / rect.width;
             const scaleY = (canvas.height / window.devicePixelRatio) / rect.height;
@@ -645,27 +640,15 @@
 
             for (let i = gameState.figures.length - 1; i >= 0; i--) {
                 let fig = gameState.figures[i];
-                
-                if (fig.challengeId !== gameState.challengeId && !fig.isLife) continue;
-
+                if (fig.challengeId !== gameState.challengeId) continue;
                 let dist = Math.hypot(fig.x - x, fig.y - y);
-                
                 if (dist < (fig.size / 2) + 35) { 
-                    
-                    if (fig.isLife) {
-                        gainLife();
-                        spawnParticles(fig.x, fig.y, '#ff4d4f');
-                        gameState.figures.splice(i, 1);
-                        return;
-                    }
-
                     if (gameState.currentChallenge.type === 'normal') {
                         if (fig.isCorrect) handleCorrectAnswer(fig);
                         else handleWrongAnswer(fig);
                     } else if (gameState.currentChallenge.type === 'decompose') {
                         handleDecomposeLogic(fig);
                     }
-                    
                     return; 
                 }
             }
@@ -686,16 +669,21 @@
         canvas.addEventListener('contextmenu', e => e.preventDefault());
 
         function handleCorrectAnswer(fig) {
-            AudioEngine.playCorrect();
             spawnParticles(fig.x, fig.y, fig.color);
             gameState.figures = gameState.figures.filter(f => f.id !== fig.id);
             
-            gameState.correctAnswers++; // STAT
-            gameState.score += 10 * gameState.level;
-            gameState.challengesCompleted++;
+            if (gameState.currentChallenge.isLifeChallenge) {
+                gainLife();
+            } else {
+                AudioEngine.playCorrect();
+                gameState.correctAnswers++;
+                gameState.lifeCounter++; // MEJORA: Avanzar contador hacia vida extra
+                gameState.score += 10 * gameState.level;
+                gameState.challengesCompleted++;
+                checkLevelUp();
+            }
             
             updateHUD();
-            checkLevelUp();
             generateChallenge();
         }
 
@@ -704,11 +692,11 @@
             spawnParticles(fig.x, fig.y, '#ff0000');
             gameState.figures = gameState.figures.filter(f => f.id !== fig.id);
             loseLife();
+            if (gameState.lives > 0) generateChallenge();
         }
 
         function handleDecomposeLogic(fig) {
             const subText = document.getElementById('challenge-subtext');
-            
             if (!gameState.selectedNumber) {
                 gameState.selectedNumber = fig;
                 AudioEngine.playTone(600, 'sine', 0.1, 0.1);
@@ -716,20 +704,18 @@
                 subText.className = "text-base md:text-lg text-emerald-600 font-bold mt-1";
             } else {
                 if (gameState.selectedNumber.id === fig.id) return;
-
                 const sum = gameState.selectedNumber.value + fig.value;
                 if (sum === gameState.currentChallenge.answer) {
                     AudioEngine.playCorrect();
                     spawnParticles(gameState.selectedNumber.x, gameState.selectedNumber.y, gameState.selectedNumber.color);
                     spawnParticles(fig.x, fig.y, fig.color);
-                    
                     gameState.figures = gameState.figures.filter(f => f.id !== fig.id && f.id !== gameState.selectedNumber.id);
-                    gameState.correctAnswers++; // STAT
+                    gameState.correctAnswers++;
+                    gameState.lifeCounter++;
                     gameState.score += 20 * gameState.level;
                     gameState.challengesCompleted++;
-                    
-                    updateHUD();
                     checkLevelUp();
+                    updateHUD();
                     generateChallenge();
                 } else {
                     handleWrongAnswer(fig);
@@ -742,37 +728,40 @@
 
         function loseLife() {
             gameState.lives--;
-            gameState.incorrectAnswers++; // STAT
+            gameState.incorrectAnswers++;
             updateHUD();
-            
             document.body.classList.add('screen-shake');
             setTimeout(() => document.body.classList.remove('screen-shake'), 300);
-
-            if (gameState.lives <= 0) gameOver();
-            else AudioEngine.playWrong();
-        }
-
-        function gainLife() {
-            if (gameState.lives < 3) {
-                gameState.lives++;
-                updateHUD();
-                AudioEngine.playExtraLife();
+            
+            if (gameState.lives <= 0) {
+                gameOver();
             } else {
-                gameState.score += 50;
-                updateHUD();
-                AudioEngine.playCorrect();
+                // ━━━━━━━━━━━━━━━━━━━
+                // MEJORA: Entrar en modo pausa de 2 segundos tras fallo
+                // ━━━━━━━━━━━━━━━━━━━
+                gameState.isPaused = true;
+                gameState.pauseTimer = 2000; // 2 segundos
+                AudioEngine.playWrong();
             }
         }
 
-        // NUEVO SISTEMA DE NIVELES MÁS RÁPIDO Y DESAFIANTE
+        function gainLife() {
+            if (gameState.lives < gameState.maxLives) {
+                gameState.lives++;
+                AudioEngine.playExtraLife();
+            } else {
+                gameState.score += 100;
+                AudioEngine.playCorrect();
+            }
+            updateHUD();
+        }
+
         function checkLevelUp() {
-            if (gameState.challengesCompleted >= 2) { // Sube de nivel cada 2 correctas
+            if (gameState.challengesCompleted >= 2) { 
                 gameState.challengesCompleted = 0;
                 gameState.level++;
-                
-                gameState.baseSpeed += 0.4; // Aumenta velocidad más agresivamente
-                gameState.spawnRate = Math.max(600, gameState.spawnRate - 120); // Caída más seguida
-                
+                gameState.baseSpeed += 0.15; 
+                gameState.spawnRate = Math.max(650, gameState.spawnRate - 60); 
                 const lvlDisp = document.getElementById('level-display');
                 lvlDisp.classList.add('bounce');
                 setTimeout(() => lvlDisp.classList.remove('bounce'), 400);
@@ -782,25 +771,19 @@
         function updateHUD() {
             document.getElementById('score-display').innerText = gameState.score;
             document.getElementById('level-display').innerText = gameState.level;
-            
-            // Actualizar Estadísticas
             document.getElementById('correct-display').innerText = gameState.correctAnswers;
             document.getElementById('incorrect-display').innerText = gameState.incorrectAnswers;
-
-            // Actualizar Corazones
             const livesDiv = document.getElementById('lives-display');
             livesDiv.innerHTML = '';
-            for(let i=0; i<2; i++) {
-                if(i < gameState.lives) livesDiv.innerHTML += `<span class="heart bounce">❤️</span>`;
+            for(let i=0; i < gameState.maxLives; i++) {
+                if(i < gameState.lives) livesDiv.innerHTML += `<span class="heart">❤️</span>`;
                 else livesDiv.innerHTML += `<span class="heart lost">🖤</span>`;
             }
         }
 
-        /** FLUJO DE MENÚS Y PANTALLAS */
         function startSelectedGame() {
             const checkboxes = document.querySelectorAll('.mode-checkbox:checked');
             const selectedModes = Array.from(checkboxes).map(cb => cb.value);
-            
             if (selectedModes.length === 0) {
                 document.getElementById('menu-warning').classList.remove('hidden');
                 return;
@@ -811,35 +794,35 @@
 
         function startGame(modesArray) {
             AudioEngine.init();
-            
             gameState = {
                 modes: modesArray,
                 lives: 2,
+                maxLives: 4,
                 score: 0,
                 level: 1,
                 correctAnswers: 0,
                 incorrectAnswers: 0,
+                lifeCounter: 0,
                 challengesCompleted: 0,
                 active: true,
+                isPaused: false,
+                pauseTimer: 0,
                 currentChallenge: null,
                 figures: [],
                 particles: [],
                 spawnTimer: 0,
-                spawnRate: 2000,
+                spawnRate: 2200,
                 baseSpeed: 1,
                 selectedNumber: null,
                 challengeId: 0,
                 wrongSpawnsSinceCorrect: 0
             };
-
             document.getElementById('menu-screen').classList.add('hidden');
             document.getElementById('game-over-screen').classList.add('hidden');
             document.getElementById('game-ui').classList.remove('hidden');
             document.getElementById('game-ui').classList.add('flex');
-
             updateHUD();
             generateChallenge();
-            
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
             updateAndDraw();
         }
@@ -847,22 +830,16 @@
         function gameOver() {
             gameState.active = false;
             AudioEngine.playGameOver();
-            
             document.getElementById('game-ui').classList.add('hidden');
             document.getElementById('game-ui').classList.remove('flex');
-            
             const goScreen = document.getElementById('game-over-screen');
             goScreen.classList.remove('hidden');
             goScreen.classList.add('flex');
-            
             document.getElementById('final-score').innerText = gameState.score;
             document.getElementById('final-level').innerText = gameState.level;
         }
 
-        function restartMode() {
-            startGame(gameState.modes);
-        }
-
+        function restartMode() { startGame(gameState.modes); }
         function goMenu() {
             document.getElementById('game-over-screen').classList.add('hidden');
             document.getElementById('game-over-screen').classList.remove('flex');
@@ -870,18 +847,14 @@
             document.getElementById('menu-screen').classList.add('flex');
         }
 
-        // Nueva función para regresar al menú en medio de una partida
         function returnToMenu() {
             gameState.active = false;
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
-            
             document.getElementById('game-ui').classList.add('hidden');
             document.getElementById('game-ui').classList.remove('flex');
-            
             document.getElementById('menu-screen').classList.remove('hidden');
             document.getElementById('menu-screen').classList.add('flex');
         }
-
     </script>
 </body>
 </html>
