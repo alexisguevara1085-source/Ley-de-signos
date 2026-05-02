@@ -178,20 +178,20 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            /* Permite crecer si el texto es muy largo */
             max-height: 45%; 
             overflow-y: auto;
         }
 
         .math-subtitle {
-            font-size: 10px;
+            font-size: 14px;
             color: #00FFFF;
             line-height: 1.4;
+            font-weight: bold;
         }
 
         #math-question {
             color: var(--pacman-color);
-            font-size: 18px;
+            font-size: 20px;
             text-shadow: 2px 2px #000;
             line-height: 1.4;
             word-wrap: break-word; /* Nunca cortado horinzontalmente */
@@ -202,7 +202,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 4px; /* Un poco más juntos para comodidad del pulgar */
             margin-top: auto;
             margin-bottom: auto;
         }
@@ -210,22 +210,22 @@
         .dpad-row {
             display: flex;
             justify-content: center;
-            gap: 6px;
+            gap: 4px; /* Más juntos horizontalmente */
         }
 
-        /* Tamaño ajustado para encajar bien en 220px */
+        /* Tamaño ajustado sutilmente más grande */
         .dpad-center {
-            width: 55px;
-            height: 55px;
+            width: 62px;
+            height: 62px;
         }
 
         .dpad-btn {
             background-color: var(--btn-bg);
             border: 3px solid #555;
             color: white;
-            font-size: 24px;
-            width: 55px;
-            height: 55px;
+            font-size: 26px;
+            width: 62px;
+            height: 62px;
             border-radius: 12px;
             box-shadow: inset 0 -3px 0 rgba(0,0,0,0.5), 0 3px 4px rgba(0,0,0,0.5);
             cursor: pointer;
@@ -329,7 +329,8 @@
             .top-stat-item { font-size: 8px; }
             .top-stat-item span { font-size: 11px; }
             .top-title { font-size: 12px; }
-            #ui-section { flex: 0 0 190px; } /* Encoger controles ligeramente en pantallas compactas */
+            #ui-section { flex: 0 0 190px; } 
+            .dpad-center, .dpad-btn { width: 55px; height: 55px; } /* Ajuste de escala auto en pantallas pequeñísimas */
         }
     </style>
 </head>
@@ -386,7 +387,7 @@
 
                 <!-- Pregunta visible completamente -->
                 <div id="math-panel">
-                    <div class="math-subtitle">Encuentra el resultado correcto de:</div>
+                    <div class="math-subtitle">RETO</div>
                     <span id="math-question">...</span>
                 </div>
 
@@ -405,8 +406,8 @@
             <label><input type="checkbox" value="sub" checked> Restas</label>
             <label><input type="checkbox" value="mult" checked> Multiplicar</label>
             <label><input type="checkbox" value="pow" checked> Potencias</label>
-            <label><input type="checkbox" value="decomp" checked> Descomponer</label>
-            <label><input type="checkbox" value="combined" checked> Combinadas</label>
+            <label><input type="checkbox" value="two_digits" checked> Dos cifras</label>
+            <label><input type="checkbox" value="decomp_sum" checked> Descomponer</label>
         </div>
 
         <p style="font-size: 9px; margin: 5px; color: #00FFFF;">Misión: ¡Resuelve al menos 3 problemas para subir de nivel!</p>
@@ -450,6 +451,7 @@
         let activeAnswers = [];
         let powerTimer = 0;
         let selectedTypes = []; 
+        let eatenParts = []; // Almacena los números comidos en modo "Descomponer"
 
         // --- 2. SISTEMA DE AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -575,24 +577,52 @@
                     let dx = this.x - (ans.col * tileSize + tileSize/2);
                     let dy = this.y - (ans.row * tileSize + tileSize/2);
                     if(Math.sqrt(dx*dx + dy*dy) < this.radius + 8) {
-                        if(ans.isCorrect) {
-                            score += 100;
-                            problemsSolved++;
-                            powerTimer = 300;
-                            Sound.correct();
-                            showFeedback(this.x, this.y, "+100! PODER!", "#00FF00");
-                            updateHUD();
-                            activeAnswers = [];
-                            if(!checkLevelCompletion()) {
-                                generateMathProblem();
-                                spawnAnswers();
+                        
+                        if (currentProblem.type === 'decomp_sum') {
+                            // MODO DESCOMPONER: Requiere comer 2 piezas
+                            activeAnswers.splice(i, 1);
+                            eatenParts.push(ans.value);
+                            Sound.eatDot(); 
+                            showFeedback(this.x, this.y, `${ans.value}`, "#FFF");
+
+                            if (eatenParts.length === 1) {
+                                mathQuestionEl.innerText = `${currentProblem.target} (Llevas: ${eatenParts[0]} + ?)`;
+                            } else if (eatenParts.length === 2) {
+                                let sum = eatenParts[0] + eatenParts[1];
+                                if (sum === currentProblem.target) {
+                                    score += 100; problemsSolved++; powerTimer = 300; Sound.correct();
+                                    showFeedback(this.x, this.y, "+100! PODER!", "#00FF00");
+                                    updateHUD(); activeAnswers = [];
+                                    if(!checkLevelCompletion()) { generateMathProblem(); spawnAnswers(); }
+                                } else {
+                                    lives--; Sound.wrong();
+                                    showFeedback(this.x, this.y, `¡${eatenParts[0]}+${eatenParts[1]}=${sum}!`, "#FF0000");
+                                    updateHUD();
+                                    if(lives <= 0) gameOver(); else resetPositions(false);
+                                }
+                                eatenParts = [];
                             }
                         } else {
-                            lives--; Sound.wrong();
-                            showFeedback(this.x, this.y, "¡ERROR!", "#FF0000");
-                            updateHUD();
-                            if(lives <= 0) gameOver();
-                            else resetPositions(false);
+                            // MODO ESTÁNDAR
+                            if(ans.isCorrect) {
+                                score += 100;
+                                problemsSolved++;
+                                powerTimer = 300;
+                                Sound.correct();
+                                showFeedback(this.x, this.y, "+100! PODER!", "#00FF00");
+                                updateHUD();
+                                activeAnswers = [];
+                                if(!checkLevelCompletion()) {
+                                    generateMathProblem();
+                                    spawnAnswers();
+                                }
+                            } else {
+                                lives--; Sound.wrong();
+                                showFeedback(this.x, this.y, "¡ERROR!", "#FF0000");
+                                updateHUD();
+                                if(lives <= 0) gameOver();
+                                else resetPositions(false);
+                            }
                         }
                     }
                 }
@@ -670,92 +700,83 @@
 
         // --- 5. SISTEMA MATEMÁTICO COMPLETO ---
         function generateMathProblem() {
+            eatenParts = []; // Resetea estado al crear nuevo problema
             const type = selectedTypes[Math.floor(Math.random() * selectedTypes.length)];
             
             let qText = "";
-            let correctVal = 0;
-            let wrongsList = [];
+            currentProblem = { type: type, correct: 0, wrongs: [] };
 
             if (type === 'sum') {
-                let a = Math.floor(Math.random() * 10) + 1;
-                let b = Math.floor(Math.random() * 10) + 1;
+                let a = Math.floor(Math.random() * 11); // 0 al 10
+                let b = Math.floor(Math.random() * 11); // 0 al 10
                 qText = `${a} + ${b}`;
-                correctVal = a + b;
-                wrongsList = [correctVal+1, correctVal-1, correctVal+2, Math.abs(a-b), correctVal+10];
+                currentProblem.correct = a + b;
+                currentProblem.wrongs = [a+b+1, a+b-1 < 0 ? a+b+2 : a+b-1, a+b+3];
             } 
             else if (type === 'sub') {
-                let a = Math.floor(Math.random() * 10) + 1;
-                let b = Math.floor(Math.random() * 10) + 1;
-                if(b > a) { let temp = a; a = b; b = temp; }
+                let a = Math.floor(Math.random() * 11); // 0 al 10
+                let b = Math.floor(Math.random() * 11); // 0 al 10
+                if(b > a) { let temp = a; a = b; b = temp; } // El primero siempre mayor o igual
                 qText = `${a} - ${b}`;
-                correctVal = a - b;
-                wrongsList = [correctVal+1, Math.max(0, correctVal-1), a+b, correctVal+2];
+                currentProblem.correct = a - b;
+                currentProblem.wrongs = [a-b+1, a-b-1 < 0 ? a-b+2 : a-b-1, a-b+3];
             } 
             else if (type === 'mult') {
-                let a = Math.floor(Math.random() * 10) + 2; 
-                let b = Math.floor(Math.random() * 12);     
+                let a = Math.floor(Math.random() * 11); // 0 al 10
+                let b = Math.floor(Math.random() * 11); // 0 al 10
                 qText = `${a} × ${b}`;
-                correctVal = a * b;
-                wrongsList = [a*(b+1), a*Math.max(0, b-1), (a+1)*b, correctVal+1, correctVal+2];
+                currentProblem.correct = a * b;
+                currentProblem.wrongs = [a*b+1, a*(b+1), (a+1)*b];
             } 
             else if (type === 'pow') {
-                let a = Math.floor(Math.random() * 11) + 2;
+                let a = Math.floor(Math.random() * 13); // Bases 0 al 12
                 qText = `${a}²`;
-                correctVal = a * a;
-                wrongsList = [(a+1)*(a+1), a*2, (a-1)*(a-1), correctVal+10];
+                currentProblem.correct = a * a;
+                currentProblem.wrongs = [(a+1)*(a+1), (a-1)*(a-1) < 0 ? (a+2)*(a+2) : (a-1)*(a-1), a*a+10];
             } 
-            else if (type === 'decomp') {
-                let tens = (Math.floor(Math.random() * 9) + 1) * 10;
-                let ones = Math.floor(Math.random() * 9) + 1;
+            else if (type === 'two_digits') {
+                let tens = (Math.floor(Math.random() * 9) + 1) * 10; // 10, 20... 90
+                let ones = Math.floor(Math.random() * 10); // 0 al 9
                 qText = `${tens} + ${ones}`;
-                correctVal = tens + ones;
-                wrongsList = [tens + ones + 10, tens + ones + 1, (tens/10) + (ones*10), tens - ones];
+                currentProblem.correct = tens + ones;
+                currentProblem.wrongs = [tens + ones + 10, tens + ones + 1, (tens/10) + (ones*10)];
             } 
-            else if (type === 'combined') {
-                let opType = Math.floor(Math.random() * 3);
-                if (opType === 0) { 
-                    let a = Math.floor(Math.random() * 5) + 2;
-                    let b = Math.floor(Math.random() * 5) + 2;
-                    let c = Math.floor(Math.random() * 10) + 1;
-                    qText = `${a} × ${b} + ${c}`;
-                    correctVal = a * b + c;
-                    wrongsList = [a*(b+c), a*b-c, correctVal+1, correctVal+2];
-                } else if (opType === 1) { 
-                    let a = Math.floor(Math.random() * 10) + 1;
-                    let b = Math.floor(Math.random() * 5) + 2;
-                    let c = Math.floor(Math.random() * 5) + 2;
-                    qText = `${a} + ${b} × ${c}`;
-                    correctVal = a + b * c;
-                    wrongsList = [(a+b)*c, a+b+c, correctVal+2, Math.abs(correctVal-2)];
-                } else { 
-                    let a = Math.floor(Math.random() * 5) + 1;
-                    let b = Math.floor(Math.random() * 5) + 1;
-                    let c = Math.floor(Math.random() * 5) + 2;
-                    qText = `(${a} + ${b}) × ${c}`;
-                    correctVal = (a + b) * c;
-                    wrongsList = [a+b*c, a*c+b, correctVal+2, Math.abs(correctVal-2)];
+            else if (type === 'decomp_sum') {
+                let target = Math.floor(Math.random() * 11); // 0 al 10
+                qText = `${target}`;
+                currentProblem.target = target;
+                
+                // Generar pool de opciones de respuesta para el mapa
+                let a = Math.floor(Math.random() * (target + 1));
+                let b = target - a;
+                let c = Math.floor(Math.random() * 11);
+                let d = Math.floor(Math.random() * 11);
+                currentProblem.answersPool = [a, b, c, d];
+            }
+
+            // Asegurar que las respuestas incorrectas sean únicas, positivas y sumen 3 opciones (Para modos normales)
+            if (type !== 'decomp_sum') {
+                let wSet = new Set(currentProblem.wrongs.filter(w => w !== currentProblem.correct && w >= 0));
+                while(wSet.size < 3) {
+                    wSet.add(currentProblem.correct + Math.floor(Math.random() * 10) + 1);
                 }
+                currentProblem.wrongs = Array.from(wSet).slice(0, 3);
             }
 
-            wrongsList = [...new Set(wrongsList)].filter(w => w !== correctVal && w >= 0);
-            wrongsList.sort(() => Math.random() - 0.5); 
-            
-            while(wrongsList.length < 3) {
-                let r = correctVal + Math.floor(Math.random() * 10) + 1;
-                if(!wrongsList.includes(r)) wrongsList.push(r);
-            }
-
-            currentProblem = {
-                text: qText,
-                correct: correctVal,
-                wrongs: wrongsList.slice(0, 3)
-            };
+            currentProblem.text = qText;
             mathQuestionEl.innerText = qText;
         }
 
         function spawnAnswers() {
             activeAnswers = [];
-            let answers = [currentProblem.correct, ...currentProblem.wrongs];
+            let answers = [];
+            
+            if (currentProblem.type === 'decomp_sum') {
+                answers = [...currentProblem.answersPool];
+            } else {
+                answers = [currentProblem.correct, ...currentProblem.wrongs];
+            }
+            
             answers.sort(() => Math.random() - 0.5);
 
             let validSpots = [];
@@ -778,7 +799,12 @@
                 } while(dist < 5); 
                 validSpots.splice(spotIndex, 1);
                 
-                activeAnswers.push({ value: answers[i], row: spot.r, col: spot.c, isCorrect: answers[i] === currentProblem.correct });
+                activeAnswers.push({ 
+                    value: answers[i], 
+                    row: spot.r, 
+                    col: spot.c, 
+                    isCorrect: currentProblem.type === 'decomp_sum' ? true : (answers[i] === currentProblem.correct)
+                });
             }
         }
 
@@ -789,7 +815,7 @@
         function initGame() {
             cloneMap();
             pacman = new Pacman();
-            score = 0; lives = 2; level = 1; problemsSolved = 0; powerTimer = 0;
+            score = 0; lives = 2; level = 1; problemsSolved = 0; powerTimer = 0; eatenParts = [];
             resetPositions(true);
             updateHUD();
             generateMathProblem();
@@ -798,7 +824,12 @@
 
         function resetPositions(isLevelUp = false) {
             pacman.reset();
+            eatenParts = []; // Resetea piezas si hay reinicio
             
+            if (currentProblem && currentProblem.type === 'decomp_sum') {
+                mathQuestionEl.innerText = currentProblem.text; // Regresa el texto al original
+            }
+
             if (isLevelUp) {
                 let numGhosts = level >= 6 ? 3 : 2;
                 ghosts = [
