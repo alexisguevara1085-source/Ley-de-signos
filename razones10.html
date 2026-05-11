@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maestro de Trigonometría</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        canvas {
+            touch-action: none; /* Evita scroll al tocar el canvas en móviles */
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex items-center justify-center">
+
+    <div class="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+        
+        <!-- Área Visual (Canvas) -->
+        <div class="w-full md:w-3/5 bg-slate-50 p-6 flex flex-col items-center border-b md:border-b-0 md:border-r border-gray-200">
+            <h2 class="text-xl font-bold text-slate-800 mb-2">Visualización</h2>
+            <p class="text-sm text-slate-500 mb-6 text-center">Observa los datos del triángulo rectángulo. La incógnita está marcada con <span class="text-red-500 font-bold">?</span></p>
+            
+            <div class="relative w-full aspect-square md:aspect-[4/3] bg-white border-2 border-slate-200 rounded-xl shadow-inner flex items-center justify-center overflow-hidden">
+                <canvas id="triCanvas" class="w-full h-full"></canvas>
+            </div>
+
+            <div class="mt-6 flex flex-wrap justify-center gap-3 w-full">
+                <div class="bg-blue-100 text-blue-800 text-xs px-3 py-1.5 rounded-full font-semibold">Seno = Opuesto / Hipotenusa</div>
+                <div class="bg-green-100 text-green-800 text-xs px-3 py-1.5 rounded-full font-semibold">Coseno = Adyacente / Hipotenusa</div>
+                <div class="bg-purple-100 text-purple-800 text-xs px-3 py-1.5 rounded-full font-semibold">Tangente = Opuesto / Adyacente</div>
+            </div>
+        </div>
+
+        <!-- Área de Interacción y Controles -->
+        <div class="w-full md:w-2/5 p-6 md:p-8 flex flex-col justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-700 mb-6">Reto Trigonométrico</h1>
+                
+                <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-6">
+                    <p class="text-slate-700 font-medium mb-1" id="questionText">Cargando problema...</p>
+                    <p class="text-sm text-slate-500">Analiza las posiciones para saber cuál es el cateto opuesto o adyacente.</p>
+                </div>
+
+                <!-- Paso 1: Elegir Función -->
+                <div class="mb-5">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">1. ¿Qué función relaciona estos datos?</label>
+                    <select id="funcSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow text-slate-700">
+                        <option value="">-- Selecciona una función --</option>
+                        <option value="seno">Seno (sin)</option>
+                        <option value="coseno">Coseno (cos)</option>
+                        <option value="tangente">Tangente (tan)</option>
+                    </select>
+                </div>
+
+                <!-- Paso 2: Calcular Valor -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">2. ¿Cuál es el valor? <span class="text-xs font-normal text-slate-500">(Redondeado a 1 decimal)</span></label>
+                    <div class="relative">
+                        <input type="number" id="numInput" step="0.1" placeholder="Ej. 15.2 o 45.0" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow text-slate-700 font-mono text-lg">
+                        <span class="absolute right-4 top-3.5 text-slate-400 font-bold" id="unitSymbol"></span>
+                    </div>
+                </div>
+
+                <!-- Mensaje de Feedback -->
+                <div id="feedbackBox" class="hidden mb-6 p-4 rounded-lg text-sm font-medium fade-in"></div>
+            </div>
+
+            <div class="flex flex-col gap-3 mt-4">
+                <button id="btnCheck" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors flex justify-center items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Verificar Respuesta
+                </button>
+                <button id="btnNext" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 21v-5h5"></path></svg>
+                    Generar Nuevo Problema
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO DE LA APLICACIÓN ---
+        let currentProblem = null;
+        const canvas = document.getElementById('triCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Elementos UI
+        const questionText = document.getElementById('questionText');
+        const funcSelect = document.getElementById('funcSelect');
+        const numInput = document.getElementById('numInput');
+        const unitSymbol = document.getElementById('unitSymbol');
+        const btnCheck = document.getElementById('btnCheck');
+        const btnNext = document.getElementById('btnNext');
+        const feedbackBox = document.getElementById('feedbackBox');
+
+        // Nombres legibles
+        const varNames = {
+            'a': 'el Cateto a',
+            'b': 'el Cateto b',
+            'c': 'la Hipotenusa (c)',
+            'angleA': 'el Ángulo A',
+            'angleB': 'el Ángulo B'
+        };
+
+        // --- LÓGICA DE GENERACIÓN ---
+        
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Todos los escenarios posibles que se le pueden presentar al estudiante
+        const scenarioTypes = [
+            // DADOS DOS LADOS -> ENCONTRAR ÁNGULO
+            { givens: ['a', 'c'], target: 'angleA', func: 'seno' },
+            { givens: ['a', 'c'], target: 'angleB', func: 'coseno' },
+            { givens: ['b', 'c'], target: 'angleA', func: 'coseno' },
+            { givens: ['b', 'c'], target: 'angleB', func: 'seno' },
+            { givens: ['a', 'b'], target: 'angleA', func: 'tangente' },
+            { givens: ['a', 'b'], target: 'angleB', func: 'tangente' },
+            
+            // DADO ÁNGULO Y UN LADO -> ENCONTRAR OTRO LADO
+            { givens: ['angleA', 'c'], target: 'a', func: 'seno' },
+            { givens: ['angleA', 'c'], target: 'b', func: 'coseno' },
+            { givens: ['angleA', 'a'], target: 'c', func: 'seno' },
+            { givens: ['angleA', 'a'], target: 'b', func: 'tangente' },
+            { givens: ['angleA', 'b'], target: 'c', func: 'coseno' },
+            { givens: ['angleA', 'b'], target: 'a', func: 'tangente' },
+            
+            // Lo mismo pero con el Ángulo B
+            { givens: ['angleB', 'c'], target: 'b', func: 'seno' },
+            { givens: ['angleB', 'c'], target: 'a', func: 'coseno' },
+            { givens: ['angleB', 'b'], target: 'c', func: 'seno' },
+            { givens: ['angleB', 'b'], target: 'a', func: 'tangente' },
+            { givens: ['angleB', 'a'], target: 'c', func: 'coseno' },
+            { givens: ['angleB', 'a'], target: 'b', func: 'tangente' }
+        ];
+
+        function generateProblem() {
+            // 1. Seleccionar un escenario al azar
+            const scenario = scenarioTypes[Math.floor(Math.random() * scenarioTypes.length)];
+            
+            let values = {};
+            
+            // 2. Generar valores base perfectos según los "givens" para evitar problemas de redondeo en cadena
+            if (scenario.givens.includes('a') && scenario.givens.includes('c')) {
+                values.a = randInt(10, 50);
+                values.c = randInt(values.a + 10, values.a + 60);
+                values.b = Math.sqrt(values.c**2 - values.a**2);
+                values.angleA = Math.asin(values.a / values.c) * (180 / Math.PI);
+            } else if (scenario.givens.includes('b') && scenario.givens.includes('c')) {
+                values.b = randInt(10, 50);
+                values.c = randInt(values.b + 10, values.b + 60);
+                values.a = Math.sqrt(values.c**2 - values.b**2);
+                values.angleA = Math.acos(values.b / values.c) * (180 / Math.PI);
+            } else if (scenario.givens.includes('a') && scenario.givens.includes('b')) {
+                values.a = randInt(10, 50);
+                values.b = randInt(10, 50);
+                values.c = Math.sqrt(values.a**2 + values.b**2);
+                values.angleA = Math.atan(values.a / values.b) * (180 / Math.PI);
+            } else if (scenario.givens.includes('angleA') || scenario.givens.includes('angleB')) {
+                let ang = randInt(20, 70);
+                values.angleA = scenario.givens.includes('angleA') ? ang : 90 - ang;
+                
+                if (scenario.givens.includes('c')) {
+                    values.c = randInt(20, 80);
+                    values.a = values.c * Math.sin(values.angleA * Math.PI / 180);
+                    values.b = values.c * Math.cos(values.angleA * Math.PI / 180);
+                } else if (scenario.givens.includes('a')) {
+                    values.a = randInt(10, 50);
+                    values.c = values.a / Math.sin(values.angleA * Math.PI / 180);
+                    values.b = values.a / Math.tan(values.angleA * Math.PI / 180);
+                } else if (scenario.givens.includes('b')) {
+                    values.b = randInt(10, 50);
+                    values.c = values.b / Math.cos(values.angleA * Math.PI / 180);
+                    values.a = values.b * Math.tan(values.angleA * Math.PI / 180);
+                }
+            }
+
+            values.angleB = 90 - values.angleA;
+
+            // 3. Redondear todo a 1 decimal
+            for (let key in values) {
+                values[key] = parseFloat(values[key].toFixed(1));
+            }
+
+            // 4. Orientación visual aleatoria (para que no aprendan de memoria izquierda=opuesto)
+            const flipX = Math.random() > 0.5;
+            const flipY = Math.random() > 0.5;
+
+            currentProblem = {
+                ...scenario,
+                values: values,
+                flipX: flipX,
+                flipY: flipY,
+                solved: false
+            };
+
+            updateUI();
+            drawTriangle();
+        }
+
+        // --- LÓGICA DE DIBUJO (CANVAS) ---
+
+        function drawTriangle() {
+            // Ajustar canvas a la resolución real (evitar borrosidad)
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            
+            const w = rect.width;
+            const h = rect.height;
+            
+            ctx.clearRect(0, 0, w, h);
+
+            if (!currentProblem) return;
+
+            // Dimensiones proporcionales lógicas
+            const { a, b } = currentProblem.values;
+            const { flipX, flipY, givens, target, values } = currentProblem;
+
+            // Determinar padding y escala
+            const padding = 45;
+            const availableW = w - padding * 2;
+            const availableH = h - padding * 2;
+            
+            // Escalar el triángulo para que quepa en el canvas
+            const scale = Math.min(availableW / b, availableH / a);
+            
+            const drawW = b * scale;
+            const drawH = a * scale;
+
+            // Centrar
+            const offsetX = (w - drawW) / 2;
+            const offsetY = (h - drawH) / 2;
+
+            // Coordenadas de los vértices relativas al bounding box [drawW, drawH]
+            // C es el ángulo recto (90)
+            let Cx = flipX ? 0 : drawW;
+            let Cy = flipY ? 0 : drawH;
+            
+            // A está al otro lado de la base (b)
+            let Ax = flipX ? drawW : 0;
+            let Ay = Cy;
+
+            // B está al otro lado de la altura (a)
+            let Bx = Cx;
+            let By = flipY ? drawH : 0;
+
+            // Añadir offset global
+            Ax += offsetX; Ay += offsetY;
+            Bx += offsetX; By += offsetY;
+            Cx += offsetX; Cy += offsetY;
+
+            // 1. Dibujar el triángulo (Líneas)
+            ctx.beginPath();
+            ctx.moveTo(Ax, Ay);
+            ctx.lineTo(Cx, Cy);
+            ctx.lineTo(Bx, By);
+            ctx.closePath();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#1e293b'; // slate-800
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+            ctx.fillStyle = '#f8fafc'; // slate-50
+            ctx.fill();
+
+            // 2. Dibujar símbolo de ángulo recto en C
+            const sqSize = 20;
+            const sqDirX = flipX ? 1 : -1;
+            const sqDirY = flipY ? 1 : -1;
+            
+            ctx.beginPath();
+            ctx.moveTo(Cx + sqSize * sqDirX, Cy);
+            ctx.lineTo(Cx + sqSize * sqDirX, Cy + sqSize * sqDirY);
+            ctx.lineTo(Cx, Cy + sqSize * sqDirY);
+            ctx.strokeStyle = '#64748b'; // slate-500
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 3. Dibujar arcos para ángulos A y B si son datos o incógnita
+            const drawArc = (vx, vy, startX, startY, endX, endY, labelStr, isTarget, isGiven, radius=35) => {
+                if (!isTarget && !isGiven) return;
+                
+                const ang1 = Math.atan2(startY - vy, startX - vx);
+                const ang2 = Math.atan2(endY - vy, endX - vx);
+                
+                ctx.beginPath();
+                ctx.arc(vx, vy, radius, ang1, ang2, false); // Intento 1
+                
+                // Asegurar que dibuja el arco pequeño interno
+                let diff = (ang2 - ang1 + Math.PI*2) % (Math.PI*2);
+                if (diff > Math.PI) {
+                    ctx.beginPath();
+                    ctx.arc(vx, vy, radius, ang2, ang1, false);
+                }
+
+                ctx.strokeStyle = isTarget ? '#ef4444' : '#3b82f6'; // red-500 : blue-500
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Posicionar texto del ángulo
+                const bisector = ang1 + (diff > Math.PI ? -(Math.PI*2 - diff)/2 : diff/2);
+                const textDist = radius + 20;
+                const tx = vx + Math.cos(bisector) * textDist;
+                const ty = vy + Math.sin(bisector) * textDist;
+                
+                drawLabel(tx, ty, labelStr, isTarget);
+            };
+
+            drawArc(Ax, Ay, Cx, Cy, Bx, By, 
+                formatLabel('A', 'angleA'), target === 'angleA', givens.includes('angleA'));
+            
+            drawArc(Bx, By, Ax, Ay, Cx, Cy, 
+                formatLabel('B', 'angleB'), target === 'angleB', givens.includes('angleB'));
+
+            // 4. Dibujar etiquetas de los lados
+            // Lado a (entre B y C)
+            const midA_X = (Bx + Cx) / 2;
+            const midA_Y = (By + Cy) / 2;
+            const offsetA_X = flipX ? -35 : 35;
+            drawLabel(midA_X + offsetA_X, midA_Y, formatLabel('a', 'a'), target === 'a', givens.includes('a') || target === 'a');
+
+            // Lado b (entre A y C)
+            const midB_X = (Ax + Cx) / 2;
+            const midB_Y = (Ay + Cy) / 2;
+            const offsetB_Y = flipY ? -35 : 35;
+            drawLabel(midB_X, midB_Y + offsetB_Y, formatLabel('b', 'b'), target === 'b', givens.includes('b') || target === 'b');
+
+            // Lado c (Hipotenusa entre A y B)
+            const midC_X = (Ax + Bx) / 2;
+            const midC_Y = (Ay + By) / 2;
+            // Vector normal para alejar el texto de la línea
+            const nx = -(By - Ay);
+            const ny = (Bx - Ax);
+            const len = Math.sqrt(nx*nx + ny*ny);
+            // Empujar hacia "afuera" del centro (Cx, Cy aprox centro del rectangulo)
+            const dirX = (midC_X - Cx) > 0 ? 1 : -1;
+            const dirY = (midC_Y - Cy) > 0 ? 1 : -1;
+            
+            const nNormX = (nx/len) * 35 * (Math.sign(nx) === dirX ? 1 : -1);
+            const nNormY = (ny/len) * 35 * (Math.sign(ny) === dirY ? 1 : -1);
+
+            drawLabel(midC_X + nNormX, midC_Y + nNormY, formatLabel('c', 'c'), target === 'c', givens.includes('c') || target === 'c');
+        }
+
+        function formatLabel(letter, varKey) {
+            const { givens, target, values } = currentProblem;
+            let isAngle = varKey.includes('angle');
+            let unit = isAngle ? '°' : '';
+            
+            if (target === varKey) return `${letter} = ?`;
+            if (givens.includes(varKey)) return `${letter} = ${values[varKey]}${unit}`;
+            return letter; // Mostrar solo la letra si no es dato ni incógnita (opcional, ayuda a guiarse)
+        }
+
+        function drawLabel(x, y, text, isTarget, emphasize = false) {
+            ctx.font = isTarget ? 'bold 18px Inter' : (emphasize ? 'bold 16px Inter' : '16px Inter');
+            ctx.fillStyle = isTarget ? '#ef4444' : (emphasize ? '#1e293b' : '#94a3b8'); // red / dark / light
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Sombra/Fondo blanco para legibilidad
+            ctx.shadowColor = 'white';
+            ctx.shadowBlur = 4;
+            ctx.lineWidth = 3;
+            ctx.strokeText(text, x, y);
+            
+            ctx.shadowBlur = 0;
+            ctx.fillText(text, x, y);
+        }
+
+
+        // --- LÓGICA DE INTERACCIÓN UI ---
+
+        function updateUI() {
+            if (!currentProblem) return;
+
+            // Restablecer controles
+            funcSelect.value = "";
+            numInput.value = "";
+            numInput.disabled = false;
+            funcSelect.disabled = false;
+            btnCheck.disabled = false;
+            feedbackBox.className = "hidden fade-in";
+            
+            // Texto de la pregunta
+            questionText.innerHTML = `Encuentra el valor de <strong>${varNames[currentProblem.target]}</strong>.`;
+            
+            // Símbolo de unidad
+            unitSymbol.textContent = currentProblem.target.includes('angle') ? '°' : '';
+        }
+
+        function showFeedback(message, type) {
+            feedbackBox.className = `mb-6 p-4 rounded-lg text-sm font-medium fade-in block`;
+            if (type === 'success') {
+                feedbackBox.classList.add('bg-green-100', 'text-green-800', 'border', 'border-green-200');
+            } else if (type === 'error') {
+                feedbackBox.classList.add('bg-red-100', 'text-red-800', 'border', 'border-red-200');
+            } else {
+                feedbackBox.classList.add('bg-yellow-100', 'text-yellow-800', 'border', 'border-yellow-200');
+            }
+            feedbackBox.innerHTML = message;
+        }
+
+        function checkAnswer() {
+            if (!currentProblem || currentProblem.solved) return;
+
+            const selectedFunc = funcSelect.value;
+            const userNum = parseFloat(numInput.value);
+            const { target, func, values } = currentProblem;
+            const correctValue = values[target];
+
+            // Validación 1: ¿Eligió una función?
+            if (!selectedFunc) {
+                showFeedback("⚠️ Primero selecciona la función trigonométrica que vas a utilizar.", "warning");
+                return;
+            }
+
+            // Validación 2: ¿La función es correcta?
+            if (selectedFunc !== func) {
+                let hint = target.includes('angle') 
+                    ? `Fíjate en los lados que tienes. ¿Son el Cateto Opuesto, Adyacente o la Hipotenusa respecto al ángulo que buscas?`
+                    : `Ubícate en el ángulo que tienes como dato. ¿El lado que buscas es Opuesto o Adyacente? ¿Qué dato tienes?`;
+                
+                showFeedback(`❌ La función <b>${selectedFunc.toUpperCase()}</b> no es la adecuada aquí. <br><span class="text-xs font-normal mt-1 block">${hint}</span>`, "error");
+                return;
+            }
+
+            // Validación 3: ¿Ingresó un número?
+            if (isNaN(userNum)) {
+                showFeedback("⚠️ Ingresa el valor numérico que calculaste.", "warning");
+                return;
+            }
+
+            // Validación 4: Tolerancia de +/- 0.2 debido al redondeo de los datos de entrada
+            if (Math.abs(userNum - correctValue) <= 0.2) {
+                showFeedback(`✅ <b>¡Excelente!</b> Has usado la función correcta (${func}) y el cálculo es correcto: ${correctValue}.`, "success");
+                currentProblem.solved = true;
+                
+                // Deshabilitar inputs
+                numInput.disabled = true;
+                funcSelect.disabled = true;
+                btnCheck.disabled = true;
+
+                // Actualizar el dibujo para mostrar la respuesta
+                currentProblem.givens.push(target);
+                // currentProblem.target = null; // No lo eliminamos para que el texto muestre el label, pero lo dibujaremos como dado
+                
+                // Redibujar revelando
+                drawTriangle();
+                
+            } else {
+                // Función correcta pero número incorrecto
+                showFeedback(`⚠️ La función <b>${func.toUpperCase()}</b> es la correcta, pero el valor numérico no coincide.<br><span class="text-xs font-normal mt-1 block">Revisa tu despeje o el uso de la calculadora (verifica que esté en grados/DEG).</span>`, "warning");
+            }
+        }
+
+        // --- LISTENERS ---
+        btnNext.addEventListener('click', generateProblem);
+        btnCheck.addEventListener('click', checkAnswer);
+        
+        numInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkAnswer();
+        });
+
+        // Redibujar al cambiar el tamaño de la ventana
+        window.addEventListener('resize', () => {
+            if(currentProblem) drawTriangle();
+        });
+
+        // Iniciar
+        generateProblem();
+
+    </script>
+</body>
+</html>
