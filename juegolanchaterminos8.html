@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrera Algebraica: Términos Semejantes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #4ade80; /* bg-green-400 */
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        h1, h2, h3, .math-font {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        /* Patrón de agua para el río */
+        .river-flow {
+            stroke-dasharray: 40 20;
+            animation: flow 2s linear infinite;
+        }
+
+        @keyframes flow {
+            from { stroke-dashoffset: 60; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Estilo de texto con contorno para los mensajes flotantes */
+        .outline-text {
+            color: white;
+            text-shadow: 
+                -2px -2px 0 #000,  
+                 2px -2px 0 #000,
+                -2px  2px 0 #000,
+                 2px  2px 0 #000;
+        }
+
+        /* Animación para el mensaje de respuesta */
+        @keyframes floatUp {
+            0% { transform: translate(-50%, 0) scale(0.8); opacity: 0; }
+            20% { transform: translate(-50%, -20px) scale(1.1); opacity: 1; }
+            80% { transform: translate(-50%, -40px) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -60px) scale(0.9); opacity: 0; }
+        }
+        .animate-float {
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        /* Efecto de olas en el fondo verde (pasto) */
+        .grass-pattern {
+            background-image: radial-gradient(#22c55e 10%, transparent 11%), radial-gradient(#22c55e 10%, transparent 11%);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col text-slate-800 grass-pattern">
+
+    <!-- PANTALLA DE INICIO -->
+    <div id="start-screen" class="absolute inset-0 bg-black/60 flex items-center justify-center z-50 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-8 max-w-lg w-[90%] text-center shadow-2xl border-4 border-blue-500">
+            <h1 class="text-4xl text-blue-600 mb-4 tracking-wide">🚤 Carrera Algebraica</h1>
+            <h2 class="text-2xl text-slate-700 mb-6 font-bold">¡Términos Semejantes!</h2>
+            
+            <div class="text-left mb-6 space-y-3 bg-blue-50 p-4 rounded-xl border border-blue-200">
+                <p><strong>¿Cómo jugar?</strong></p>
+                <p>1. Compites en una carrera de lanchas. Tu lancha es la <span class="text-blue-600 font-bold">AZUL</span>.</p>
+                <p>2. Aparecerán dos términos algebraicos. Debes decidir si son <strong>SEMEJANTES</strong> o no.</p>
+                <p>3. <em>Recuerda:</em> Son semejantes si tienen las <strong>mismas letras</strong> con los <strong>mismos exponentes</strong>.</p>
+                <p>4. Si aciertas, avanzas rápido. Si fallas, avanzas muy poco. ¡Las otras lanchas no te esperarán!</p>
+            </div>
+
+            <button onclick="startGame()" class="w-full bg-blue-500 hover:bg-blue-600 text-white text-2xl font-black py-4 px-8 rounded-full shadow-lg transform transition active:scale-95 math-font">
+                ¡EMPEZAR CARRERA!
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA DE FIN DE JUEGO -->
+    <div id="end-screen" class="absolute inset-0 bg-black/80 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-[90%] text-center shadow-2xl border-4 border-yellow-400">
+            <h1 id="end-title" class="text-5xl text-yellow-500 mb-4 tracking-wide">¡Carrera Terminada!</h1>
+            <p id="end-message" class="text-xl text-slate-700 mb-8 font-bold"></p>
+            
+            <button onclick="location.reload()" class="w-full bg-green-500 hover:bg-green-600 text-white text-xl font-black py-4 px-8 rounded-full shadow-lg transform transition active:scale-95 math-font">
+                VOLVER A JUGAR
+            </button>
+        </div>
+    </div>
+
+    <!-- ÁREA DE JUEGO -->
+    <div class="flex-1 relative w-full h-full flex flex-col">
+        
+        <!-- Contenedor del Río y Circuito -->
+        <div class="relative flex-1 w-full overflow-hidden flex items-center justify-center" id="svg-container">
+            <svg id="race-svg" class="w-full h-full max-h-[60vh] object-contain drop-shadow-xl" viewBox="0 0 2000 800" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <pattern id="checkered" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <rect width="10" height="10" fill="black"></rect>
+                        <rect x="10" width="10" height="10" fill="white"></rect>
+                        <rect y="10" width="10" height="10" fill="white"></rect>
+                        <rect x="10" y="10" width="10" height="10" fill="black"></rect>
+                    </pattern>
+                </defs>
+
+                <!-- Borde del río -->
+                <path id="river-border" d="M 50 700 C 400 700, 300 100, 800 100 C 1300 100, 1100 700, 1600 700 C 1900 700, 1900 100, 1950 100" fill="none" stroke="#1e3a8a" stroke-width="130" stroke-linecap="round"/>
+                
+                <!-- Agua del río -->
+                <path id="river-path" d="M 50 700 C 400 700, 300 100, 800 100 C 1300 100, 1100 700, 1600 700 C 1900 700, 1900 100, 1950 100" fill="none" stroke="#3b82f6" stroke-width="110" stroke-linecap="round"/>
+                
+                <!-- Corriente animada -->
+                <path d="M 50 700 C 400 700, 300 100, 800 100 C 1300 100, 1100 700, 1600 700 C 1900 700, 1900 100, 1950 100" fill="none" stroke="#60a5fa" stroke-width="4" stroke-linecap="round" class="river-flow"/>
+                <path d="M 50 670 C 400 670, 270 70, 800 70 C 1300 70, 1070 670, 1600 670 C 1930 670, 1930 70, 1980 70" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" class="river-flow" style="animation-duration: 3s"/>
+
+                <!-- Línea de Salida -->
+                <line x1="50" y1="630" x2="50" y2="770" stroke="white" stroke-width="8" stroke-dasharray="10 5" />
+                <text x="50" y="620" fill="white" font-weight="bold" font-size="24" class="math-font" text-anchor="middle">SALIDA</text>
+
+                <!-- Línea de Meta -->
+                <line x1="1950" y1="30" x2="1950" y2="170" stroke="url(#checkered)" stroke-width="15" />
+                <text x="1950" y="20" fill="white" font-weight="bold" font-size="24" class="math-font" text-anchor="middle">META</text>
+
+                <!-- LANCHAS (Se posicionan vía JS) -->
+                <!-- CPU 1 (Rápida) -->
+                <g id="boat-cpu1">
+                    <path d="M-15,-6 L-30,-15 L-25,0 L-30,15 L-15,6 Z" fill="rgba(255,255,255,0.4)" />
+                    <path d="M-15,-10 L15,-10 L25,0 L15,10 L-15,10 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+                    <rect x="-5" y="-5" width="12" height="10" fill="#7f1d1d" rx="2" />
+                </g>
+
+                <!-- CPU 2 (Media-Rápida) -->
+                <g id="boat-cpu2">
+                    <path d="M-15,-6 L-30,-15 L-25,0 L-30,15 L-15,6 Z" fill="rgba(255,255,255,0.4)" />
+                    <path d="M-15,-10 L15,-10 L25,0 L15,10 L-15,10 Z" fill="#f59e0b" stroke="#78350f" stroke-width="2"/>
+                    <rect x="-5" y="-5" width="12" height="10" fill="#78350f" rx="2" />
+                </g>
+
+                <!-- CPU 3 (Lenta) -->
+                <g id="boat-cpu3">
+                    <path d="M-15,-6 L-30,-15 L-25,0 L-30,15 L-15,6 Z" fill="rgba(255,255,255,0.4)" />
+                    <path d="M-15,-10 L15,-10 L25,0 L15,10 L-15,10 Z" fill="#10b981" stroke="#064e3b" stroke-width="2"/>
+                    <rect x="-5" y="-5" width="12" height="10" fill="#064e3b" rx="2" />
+                </g>
+
+                <!-- JUGADOR -->
+                <g id="boat-player">
+                    <path d="M-15,-6 L-40,-20 L-30,0 L-40,20 L-15,6 Z" fill="rgba(255,255,255,0.7)" /> <!-- Estela más grande -->
+                    <path d="M-18,-12 L18,-12 L30,0 L18,12 L-18,12 Z" fill="#0ea5e9" stroke="#ffffff" stroke-width="3"/>
+                    <rect x="-5" y="-6" width="15" height="12" fill="#0284c7" rx="3" />
+                    <circle cx="2" cy="0" r="3" fill="white" />
+                </g>
+
+            </svg>
+        </div>
+
+        <!-- PANEL DE PREGUNTAS (UI) -->
+        <div class="bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)] p-4 md:p-6 pb-8 border-t-8 border-blue-500 relative z-10">
+            <div class="max-w-4xl mx-auto">
+                <h3 class="text-center text-slate-500 font-bold mb-3 text-sm md:text-base uppercase tracking-widest">¿Son términos semejantes?</h3>
+                
+                <!-- Términos -->
+                <div class="flex flex-row justify-center items-center gap-4 md:gap-12 mb-6">
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 md:p-6 w-40 md:w-64 flex justify-center items-center shadow-inner">
+                        <span id="term1" class="math-font text-3xl md:text-5xl text-blue-900 drop-shadow-sm"></span>
+                    </div>
+                    <div class="text-slate-400 font-black text-2xl md:text-4xl">y</div>
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 md:p-6 w-40 md:w-64 flex justify-center items-center shadow-inner">
+                        <span id="term2" class="math-font text-3xl md:text-5xl text-blue-900 drop-shadow-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex justify-center gap-4 md:gap-8">
+                    <button onclick="handleAnswer(true)" class="flex-1 max-w-[250px] bg-green-500 hover:bg-green-600 text-white font-black text-xl md:text-2xl py-4 rounded-2xl shadow-[0_8px_0_#16a34a] hover:shadow-[0_4px_0_#16a34a] hover:translate-y-1 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                        SÍ (Visto)
+                    </button>
+                    <button onclick="handleAnswer(false)" class="flex-1 max-w-[250px] bg-red-500 hover:bg-red-600 text-white font-black text-xl md:text-2xl py-4 rounded-2xl shadow-[0_8px_0_#dc2626] hover:shadow-[0_4px_0_#dc2626] hover:translate-y-1 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        NO (Equis)
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenedor para mensajes de feedback (Correcto/Incorrecto) -->
+        <div id="feedback-container" class="absolute inset-0 pointer-events-none z-40 overflow-hidden"></div>
+    </div>
+
+    <script>
+        // --- Variables del Juego ---
+        let gameActive = false;
+        let animationFrame;
+        let trackPath;
+        let trackTotalLength;
+
+        // Progreso de 0 a 1
+        let playerProgress = 0;
+        let cpu1Progress = 0; 
+        let cpu2Progress = 0;
+        let cpu3Progress = 0;
+
+        // Velocidad dinámica del jugador
+        let playerSpeed = 0.0003;
+        const BASE_SPEED = 0.0003;
+        const MAX_SPEED = 0.0013; // Velocidad máxima (muy rápida)
+        const MIN_SPEED = 0.0001; // Velocidad mínima (casi detenido)
+
+        // Estado de la pregunta
+        let isCurrentSimilar = false;
+
+        // Configuración de visualización de los botes
+        // offsets perpendiculares al camino para crear "carriles"
+        const offsets = {
+            cpu1: -36,    // carril exterior izquierdo
+            cpu2: -12,    // carril interior izquierdo
+            player: 12,   // carril interior derecho
+            cpu3: 36      // carril exterior derecho
+        };
+
+        // Velocidades (porcentaje del track por frame a 60fps)
+        const speeds = {
+            cpu1: 0.00080,  // Rápida
+            cpu2: 0.00070,  // Media-Rápida
+            cpu3: 0.00060   // Media
+        };
+
+        // Inicialización
+        window.onload = () => {
+            trackPath = document.getElementById('river-path');
+            trackTotalLength = trackPath.getTotalLength();
+            updateBoatPosition('boat-player', 0, offsets.player);
+            updateBoatPosition('boat-cpu1', 0, offsets.cpu1);
+            updateBoatPosition('boat-cpu2', 0, offsets.cpu2);
+            updateBoatPosition('boat-cpu3', 0, offsets.cpu3);
+        };
+
+        // --- Motor de Álgebra ---
+        const variablesPool = ['x', 'y', 'z', 'a', 'b', 'm', 'n'];
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateTerms() {
+            // Decidir cantidad de variables (1 a 3)
+            let numVars = getRandomInt(1, 3);
+            
+            // Seleccionar variables aleatorias
+            let pool = [...variablesPool].sort(() => Math.random() - 0.5);
+            let baseVars = [];
+            for (let i = 0; i < numVars; i++) {
+                baseVars.push({ letter: pool[i], exp: getRandomInt(1, 4) });
+            }
+            // Ordenar alfabéticamente
+            baseVars.sort((a, b) => a.letter.localeCompare(b.letter));
+
+            // Coeficientes aleatorios (-10 a 10, no cero)
+            let coef1 = getRandomInt(-10, 10);
+            if (coef1 === 0) coef1 = 5;
+            let coef2 = getRandomInt(-10, 10);
+            if (coef2 === 0) coef2 = -5;
+            
+            // Para asegurar variedad visual, evitamos coeficientes exactamente iguales frecuentemente
+            if (coef1 === coef2) coef2 = (coef1 > 0) ? coef1 - 1 : coef1 + 1;
+            if (coef2 === 0) coef2 = 2;
+
+            // Decidir si serán semejantes (aprox 50% probabilidad)
+            isCurrentSimilar = Math.random() > 0.5;
+
+            let vars2 = JSON.parse(JSON.stringify(baseVars)); // Copia profunda
+
+            if (!isCurrentSimilar) {
+                // Alterar vars2 para que NO sean semejantes
+                let changeType = getRandomInt(0, 2);
+                
+                if (changeType === 0) {
+                    // Cambiar un exponente
+                    let idx = getRandomInt(0, vars2.length - 1);
+                    vars2[idx].exp = vars2[idx].exp === 1 ? 2 : (vars2[idx].exp > 1 ? 1 : 3);
+                } else if (changeType === 1) {
+                    // Cambiar una letra
+                    let idx = getRandomInt(0, vars2.length - 1);
+                    vars2[idx].letter = pool[numVars]; // tomar una letra que no estaba
+                } else {
+                    // Quitar o añadir una variable
+                    if (vars2.length > 1) {
+                        vars2.pop();
+                    } else {
+                        vars2.push({ letter: pool[numVars], exp: 1 });
+                    }
+                }
+                vars2.sort((a, b) => a.letter.localeCompare(b.letter));
+            }
+
+            // Mostrar en UI
+            document.getElementById('term1').innerHTML = formatTerm(coef1, baseVars);
+            document.getElementById('term2').innerHTML = formatTerm(coef2, vars2);
+        }
+
+        function formatTerm(coef, varsArray) {
+            let termStr = '';
+            
+            // Formatear coeficiente
+            if (coef === -1 && varsArray.length > 0) termStr += '-';
+            else if (coef !== 1 || varsArray.length === 0) termStr += coef;
+
+            // Formatear variables y exponentes
+            varsArray.forEach(v => {
+                termStr += v.letter;
+                if (v.exp > 1) {
+                    termStr += `<sup>${v.exp}</sup>`;
+                }
+            });
+            return termStr;
+        }
+
+        // --- Lógica del Juego ---
+
+        function startGame() {
+            // Ocultar pantalla inicio
+            document.getElementById('start-screen').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('start-screen').classList.add('hidden');
+            }, 300);
+
+            // Reiniciar progreso
+            playerProgress = 0;
+            cpu1Progress = 0;
+            cpu2Progress = 0;
+            cpu3Progress = 0;
+            playerSpeed = BASE_SPEED;
+            gameActive = true;
+
+            // Posicionar inicial
+            updateAllBoats();
+            generateTerms();
+
+            // Iniciar bucle
+            animationFrame = requestAnimationFrame(gameLoop);
+        }
+
+        function handleAnswer(userGuess) {
+            if (!gameActive) return;
+
+            let isCorrect = (userGuess === isCurrentSimilar);
+            
+            if (isCorrect) {
+                playerSpeed += 0.0004; // Acelera
+                if (playerSpeed > MAX_SPEED) playerSpeed = MAX_SPEED;
+                showFeedback(true);
+            } else {
+                playerSpeed -= 0.0004; // Frena drásticamente
+                if (playerSpeed < MIN_SPEED) playerSpeed = MIN_SPEED;
+                showFeedback(false);
+            }
+
+            generateTerms();
+        }
+
+        function showFeedback(isCorrect) {
+            const container = document.getElementById('feedback-container');
+            const feedbackEl = document.createElement('div');
+            
+            feedbackEl.className = `absolute left-1/2 bottom-1/4 animate-float font-black text-4xl md:text-5xl outline-text ${isCorrect ? 'text-green-400' : 'text-red-500'}`;
+            feedbackEl.innerHTML = isCorrect ? '¡+ VELOCIDAD! 🚀' : '¡- VELOCIDAD! 🐢';
+            
+            container.appendChild(feedbackEl);
+            setTimeout(() => {
+                feedbackEl.remove();
+            }, 1000);
+        }
+
+        // --- Bucle de Animación ---
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            // Decaimiento de la velocidad del jugador (fricción) para obligar a responder constantemente
+            if (playerSpeed > BASE_SPEED) {
+                playerSpeed -= 0.000002; // Pierde velocidad poco a poco si se relaja
+            } else if (playerSpeed < BASE_SPEED) {
+                playerSpeed += 0.000001; // Recupera velocidad lentamente si estaba frenado
+            }
+
+            // Avanzar CPUs
+            cpu1Progress += speeds.cpu1;
+            cpu2Progress += speeds.cpu2;
+            cpu3Progress += speeds.cpu3;
+            
+            // Avanzar Jugador de forma continua
+            playerProgress += playerSpeed; 
+
+            // Chequear ganador
+            if (playerProgress >= 1) {
+                playerProgress = 1;
+                endGame("¡GANASTE! 🎉", "¡Eres un experto identificando términos semejantes!");
+                return;
+            } else if (cpu1Progress >= 1 || cpu2Progress >= 1 || cpu3Progress >= 1) {
+                // Algún CPU ganó
+                cpu1Progress = Math.min(cpu1Progress, 1);
+                cpu2Progress = Math.min(cpu2Progress, 1);
+                cpu3Progress = Math.min(cpu3Progress, 1);
+                endGame("¡PERDISTE! 😢", "Una de las lanchas rivales llegó primero. ¡Inténtalo de nuevo!");
+                return;
+            }
+
+            updateAllBoats();
+            animationFrame = requestAnimationFrame(gameLoop);
+        }
+
+        function updateAllBoats() {
+            updateBoatPosition('boat-player', playerProgress, offsets.player);
+            updateBoatPosition('boat-cpu1', cpu1Progress, offsets.cpu1);
+            updateBoatPosition('boat-cpu2', cpu2Progress, offsets.cpu2);
+            updateBoatPosition('boat-cpu3', cpu3Progress, offsets.cpu3);
+        }
+
+        function updateBoatPosition(boatId, progressNormalized, offsetNormal) {
+            if (!trackPath) return;
+
+            let lengthAtProgress = progressNormalized * trackTotalLength;
+            
+            // Punto actual
+            let p1 = trackPath.getPointAtLength(lengthAtProgress);
+            
+            // Punto ligeramente adelante para calcular la tangente (rotación)
+            let aheadLength = Math.min(lengthAtProgress + 1, trackTotalLength);
+            let p2 = trackPath.getPointAtLength(aheadLength);
+
+            // Si estamos al final exacto, mirar ligeramente atrás para la rotación
+            if (lengthAtProgress >= trackTotalLength) {
+                let p0 = trackPath.getPointAtLength(trackTotalLength - 1);
+                p2 = p1;
+                p1 = p0;
+            }
+
+            // Vector director
+            let dx = p2.x - p1.x;
+            let dy = p2.y - p1.y;
+            let angleRad = Math.atan2(dy, dx);
+            let angleDeg = angleRad * (180 / Math.PI);
+
+            // Vector normal (perpendicular) para el carril
+            let nx = -Math.sin(angleRad);
+            let ny = Math.cos(angleRad);
+
+            // Coordenadas finales con el offset del carril
+            let finalX = p1.x + nx * offsetNormal;
+            let finalY = p1.y + ny * offsetNormal;
+
+            // Aplicar al SVG
+            const boat = document.getElementById(boatId);
+            boat.setAttribute('transform', `translate(${finalX}, ${finalY}) rotate(${angleDeg})`);
+        }
+
+        function endGame(titleText, messageText) {
+            gameActive = false;
+            cancelAnimationFrame(animationFrame);
+            updateAllBoats(); // actualización final para asegurar posiciones
+
+            const endScreen = document.getElementById('end-screen');
+            document.getElementById('end-title').innerText = titleText;
+            document.getElementById('end-message').innerText = messageText;
+
+            // Mostrar pantalla
+            endScreen.classList.remove('hidden');
+            // Pequeño delay para que la transición de opacidad funcione
+            setTimeout(() => {
+                endScreen.classList.remove('opacity-0');
+            }, 50);
+        }
+
+    </script>
+</body>
+</html>
