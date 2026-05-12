@@ -307,7 +307,7 @@
                     ctx.arc(vx, vy, radius, ang2, ang1, false);
                 }
 
-                ctx.strokeStyle = isTarget ? '#ef4444' : '#3b82f6'; // red-500 : blue-500
+                ctx.strokeStyle = isTarget ? '#cc0000' : '#000080'; // Rojo para incógnita, Azul oscuro para datos
                 ctx.lineWidth = 3;
                 ctx.stroke();
                 
@@ -317,7 +317,7 @@
                 const tx = vx + Math.cos(bisector) * textDist;
                 const ty = vy + Math.sin(bisector) * textDist;
                 
-                drawLabel(tx, ty, labelStr, isTarget);
+                drawLabel(tx, ty, labelStr, isTarget, isGiven);
             };
 
             drawArc(Ax, Ay, Cx, Cy, Bx, By, 
@@ -331,13 +331,13 @@
             const midA_X = (Bx + Cx) / 2;
             const midA_Y = (By + Cy) / 2;
             const offsetA_X = flipX ? -35 : 35;
-            drawLabel(midA_X + offsetA_X, midA_Y, formatLabel('a', 'a'), target === 'a', givens.includes('a') || target === 'a');
+            drawLabel(midA_X + offsetA_X, midA_Y, formatLabel('a', 'a'), target === 'a', givens.includes('a'));
 
             // Lado b (entre A y C)
             const midB_X = (Ax + Cx) / 2;
             const midB_Y = (Ay + Cy) / 2;
             const offsetB_Y = flipY ? -35 : 35;
-            drawLabel(midB_X, midB_Y + offsetB_Y, formatLabel('b', 'b'), target === 'b', givens.includes('b') || target === 'b');
+            drawLabel(midB_X, midB_Y + offsetB_Y, formatLabel('b', 'b'), target === 'b', givens.includes('b'));
 
             // Lado c (Hipotenusa entre A y B)
             const midC_X = (Ax + Bx) / 2;
@@ -353,7 +353,7 @@
             const nNormX = (nx/len) * 35 * (Math.sign(nx) === dirX ? 1 : -1);
             const nNormY = (ny/len) * 35 * (Math.sign(ny) === dirY ? 1 : -1);
 
-            drawLabel(midC_X + nNormX, midC_Y + nNormY, formatLabel('c', 'c'), target === 'c', givens.includes('c') || target === 'c');
+            drawLabel(midC_X + nNormX, midC_Y + nNormY, formatLabel('c', 'c'), target === 'c', givens.includes('c'));
         }
 
         function formatLabel(letter, varKey) {
@@ -366,22 +366,22 @@
             return letter; // Mostrar solo la letra si no es dato ni incógnita (opcional, ayuda a guiarse)
         }
 
-        function drawLabel(x, y, text, isTarget, emphasize = false) {
-            ctx.font = isTarget ? 'bold 18px Inter' : (emphasize ? 'bold 16px Inter' : '16px Inter');
-            ctx.fillStyle = isTarget ? '#ef4444' : (emphasize ? '#1e293b' : '#94a3b8'); // red / dark / light
+        function drawLabel(x, y, text, isTarget, isGiven = false) {
+            if (isTarget) {
+                ctx.font = 'bold 22px Inter, sans-serif';
+                ctx.fillStyle = '#cc0000'; // Rojo fuerte para la incógnita
+            } else if (isGiven) {
+                ctx.font = 'bold 20px Inter, sans-serif';
+                ctx.fillStyle = '#000080'; // Azul oscuro para los datos
+            } else {
+                ctx.font = 'bold 18px Inter, sans-serif';
+                ctx.fillStyle = '#000000'; // Negro para las letras de referencia
+            }
+            
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            
-            // Sombra/Fondo blanco para legibilidad
-            ctx.shadowColor = 'white';
-            ctx.shadowBlur = 4;
-            ctx.lineWidth = 3;
-            ctx.strokeText(text, x, y);
-            
-            ctx.shadowBlur = 0;
             ctx.fillText(text, x, y);
         }
-
 
         // --- LÓGICA DE INTERACCIÓN UI ---
 
