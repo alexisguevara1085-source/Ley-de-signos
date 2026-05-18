@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enteros Quest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #0f172a;
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Custom Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        @keyframes vanish {
+            0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+            50% { transform: scale(1.5); filter: brightness(2); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        .animate-vanish { animation: vanish 0.8s forwards; }
+
+        /* Token Styles */
+        .token {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 24px;
+            box-shadow: 0 4px 0px rgba(0,0,0,0.3), inset 0 4px 8px rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: transform 0.1s;
+            user-select: none;
+        }
+        .token:active { transform: translateY(4px); box-shadow: 0 0px 0px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3); }
+        .token.pos { background: linear-gradient(135deg, #ef4444, #b91c1c); border: 2px solid #f87171; color: white; }
+        .token.neg { background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: 2px solid #60a5fa; color: white; }
+
+        /* Buttons */
+        .btn-game {
+            transition: all 0.1s;
+            box-shadow: 0 6px 0px rgba(0,0,0,0.3);
+        }
+        .btn-game:active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0px rgba(0,0,0,0.3);
+        }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .screen { display: none; }
+        .screen.active { display: flex; }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="w-full h-screen relative flex flex-col">
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <header id="top-bar" class="hidden w-full bg-slate-800 p-4 shadow-lg flex justify-between items-center z-10">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 rounded-full h-10 w-10 flex items-center justify-center font-bold text-xl border-2 border-indigo-400">
+                <span id="avatar-initial">👤</span>
+            </div>
+            <span id="player-name-display" class="font-bold text-xl text-indigo-200">Jugador</span>
+        </div>
+        <div class="flex gap-4">
+            <div class="bg-emerald-600/30 px-4 py-2 rounded-xl border border-emerald-500 flex items-center gap-2">
+                <span>✅</span> <span id="stat-correct" class="font-bold text-emerald-400">0</span>
+            </div>
+            <div class="bg-rose-600/30 px-4 py-2 rounded-xl border border-rose-500 flex items-center gap-2">
+                <span>❌</span> <span id="stat-incorrect" class="font-bold text-rose-400">0</span>
+            </div>
+            <button onclick="goMenu()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-xl font-bold transition">
+                🏠 Menú
+            </button>
+        </div>
+    </header>
+
+    <main id="screen-start" class="screen active flex-col items-center justify-center w-full flex-grow bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjEpIi8+PC9zdmc+')]">
+        <div class="animate-float mb-8 text-center">
+            <h1 class="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 drop-shadow-lg mb-4">
+                Enteros Quest
+            </h1>
+            <p class="text-xl md:text-2xl text-indigo-200 font-semibold">¡Domina los números positivos y negativos!</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl w-11/12 max-w-md flex flex-col gap-6 animate-pop shadow-2xl">
+            <div class="flex flex-col gap-2">
+                <label for="player-name" class="font-bold text-lg text-indigo-100">¿Cuál es tu nombre?</label>
+                <input type="text" id="player-name" placeholder="Ej. Alex" maxlength="15" 
+                       class="w-full bg-slate-900 border-2 border-indigo-500 rounded-xl p-4 text-2xl text-center font-bold outline-none focus:border-pink-500 transition shadow-inner">
+            </div>
+            <button onclick="startGame()" class="btn-game w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-black text-2xl py-4 rounded-xl">
+                ¡COMENZAR! 🚀
+            </button>
+        </div>
+    </main>
+
+    <main id="screen-menu" class="screen flex-col items-center justify-center w-full flex-grow p-4 overflow-y-auto">
+        <h2 class="text-3xl md:text-5xl font-black text-white mb-8 drop-shadow-lg text-center mt-4">Elige tu Misión</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl pb-8">
+            <button onclick="startSection(1)" class="glass p-6 md:p-8 rounded-3xl flex flex-col items-center gap-4 hover:scale-105 transition-transform duration-200 group border-t-4 border-t-indigo-400">
+                <div class="text-6xl md:text-8xl group-hover:animate-pop transition-transform">⚔️</div>
+                <h3 class="text-2xl md:text-3xl font-bold text-indigo-200 text-center">Batalla de Operaciones</h3>
+                <p class="text-slate-300 text-center text-base md:text-lg">Reconoce y resuelve sumas, restas y multiplicaciones rápidamente.</p>
+                <div class="mt-auto bg-indigo-600 text-white px-6 py-2 rounded-full font-bold text-sm">Jugar</div>
+            </button>
+            <button onclick="startSection(2)" class="glass p-6 md:p-8 rounded-3xl flex flex-col items-center gap-4 hover:scale-105 transition-transform duration-200 group border-t-4 border-t-pink-400">
+                <div class="text-6xl md:text-8xl group-hover:animate-pop transition-transform">🧪</div>
+                <h3 class="text-2xl md:text-3xl font-bold text-pink-200 text-center">Laboratorio Visual</h3>
+                <p class="text-slate-300 text-center text-base md:text-lg">Comprende cómo funcionan los signos usando fichas de energía.</p>
+                <div class="mt-auto bg-pink-600 text-white px-6 py-2 rounded-full font-bold text-sm">Experimentar</div>
+            </button>
+        </div>
+    </main>
+
+    <main id="screen-ops" class="screen flex-col w-full flex-grow p-4 overflow-y-auto relative">
+        <div class="max-w-2xl mx-auto w-full flex flex-col h-full gap-2 md:gap-4 pb-8">
+            
+            <!-- Operation Display -->
+            <div class="glass p-6 md:p-10 rounded-3xl text-center shadow-xl flex-shrink-0">
+                <p class="text-indigo-300 font-bold mb-2">Resuelve la misión:</p>
+                <div id="op-display" class="text-6xl md:text-8xl font-black tracking-wider text-white drop-shadow-lg">
+                    -7 + 4
+                </div>
+            </div>
+
+            <!-- Step 1: Identify Operation -->
+            <div id="op-step-1" class="flex flex-col gap-4 flex-grow justify-center">
+                <h3 class="text-2xl font-bold text-center text-pink-300 mb-2">Paso 1: ¿Qué operación es?</h3>
+                <button onclick="identifyOp('suma')" class="btn-game bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-2xl font-bold flex items-center justify-center gap-3">
+                    <span class="text-3xl">➕</span> Es una SUMA (Signos iguales)
+                </button>
+                <button onclick="identifyOp('resta')" class="btn-game bg-rose-600 hover:bg-rose-500 py-4 rounded-2xl text-2xl font-bold flex items-center justify-center gap-3">
+                    <span class="text-3xl">➖</span> Es una RESTA (Signos diferentes)
+                </button>
+                <button onclick="identifyOp('mult')" class="btn-game bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl text-2xl font-bold flex items-center justify-center gap-3">
+                    <span class="text-3xl">✖️</span> Es MULTIPLICACIÓN
+                </button>
+            </div>
+
+            <!-- Step 2: Numpad & Solve -->
+            <div id="op-step-2" class="hidden flex-col gap-2 md:gap-4 flex-grow justify-end pb-2">
+                <div class="flex justify-between items-center bg-slate-800 p-3 md:p-4 rounded-2xl border-2 border-slate-600">
+                    <span class="text-slate-400 font-bold text-lg md:text-xl">Respuesta:</span>
+                    <span id="numpad-display" class="text-4xl md:text-5xl font-black text-yellow-300 min-w-[3ch] text-right">?</span>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 md:gap-4">
+                    <button onclick="pressNum('7')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">7</button>
+                    <button onclick="pressNum('8')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">8</button>
+                    <button onclick="pressNum('9')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">9</button>
+                    
+                    <button onclick="pressNum('4')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">4</button>
+                    <button onclick="pressNum('5')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">5</button>
+                    <button onclick="pressNum('6')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">6</button>
+                    
+                    <button onclick="pressNum('1')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">1</button>
+                    <button onclick="pressNum('2')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">2</button>
+                    <button onclick="pressNum('3')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">3</button>
+                    
+                    <button onclick="pressNum('-')" class="btn-game bg-pink-600 py-2 md:py-3 rounded-xl text-3xl md:text-4xl font-bold">-</button>
+                    <button onclick="pressNum('0')" class="btn-game bg-slate-700 py-2 md:py-3 rounded-xl text-2xl md:text-3xl font-bold">0</button>
+                    <button onclick="pressNum('del')" class="btn-game bg-rose-600 py-2 md:py-3 rounded-xl text-xl md:text-2xl font-bold">⌫</button>
+                </div>
+                
+                <button onclick="checkOpAnswer()" class="btn-game w-full bg-emerald-500 hover:bg-emerald-400 py-3 md:py-4 rounded-2xl text-xl md:text-2xl font-black text-slate-900 mt-1 md:mt-2 uppercase tracking-wide">
+                    Comprobar ✔️
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <main id="screen-visual" class="screen flex-col w-full flex-grow p-4 relative overflow-y-auto">
+        <div class="max-w-4xl mx-auto w-full flex flex-col h-full gap-4 pb-8">
+            
+            <div class="glass p-4 rounded-3xl text-center shadow-xl flex-shrink-0 flex justify-between items-center">
+                <div class="text-left hidden md:block">
+                    <p class="text-sm text-indigo-300 font-bold">Regla:</p>
+                    <p class="text-xs">Fichas opuestas se anulan.<br>Mismo signo se suman.</p>
+                </div>
+                <div id="visual-op-display" class="text-4xl md:text-6xl font-black text-white mx-auto">
+                    -3 + 5
+                </div>
+                <button onclick="generateVisualExercise()" class="btn-game bg-indigo-600 p-3 rounded-xl">🔄 Otro</button>
+            </div>
+
+            <!-- Controls to add tokens -->
+            <div class="flex justify-center gap-4 bg-slate-800 p-4 rounded-2xl border border-slate-700 flex-shrink-0">
+                <button onclick="addToken('pos')" class="btn-game bg-red-600 hover:bg-red-500 px-6 py-3 rounded-xl font-bold flex flex-col items-center">
+                    <span class="text-2xl">+</span> <span class="text-xs">Positivo</span>
+                </button>
+                <button onclick="removeToken('pos')" class="btn-game bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-xl font-bold">
+                    ⌫
+                </button>
+                <div class="w-px bg-slate-600 mx-2"></div>
+                <button onclick="addToken('neg')" class="btn-game bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold flex flex-col items-center">
+                    <span class="text-2xl">-</span> <span class="text-xs">Negativo</span>
+                </button>
+                <button onclick="removeToken('neg')" class="btn-game bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-xl font-bold">
+                    ⌫
+                </button>
+            </div>
+
+            <!-- Tokens Arena -->
+            <div id="visual-arena" class="flex-grow glass rounded-3xl p-4 md:p-6 relative flex flex-col gap-6 justify-center items-center overflow-y-auto min-h-[200px]">
+                <!-- Positives row -->
+                <div id="arena-pos" class="flex flex-wrap gap-2 justify-center w-full min-h-[55px] bg-red-900/10 rounded-2xl p-2 border border-red-500/20"></div>
+                <!-- Negatives row -->
+                <div id="arena-neg" class="flex flex-wrap gap-2 justify-center w-full min-h-[55px] bg-blue-900/10 rounded-2xl p-2 border border-blue-500/20"></div>
+            </div>
+
+            <div class="flex gap-4 mt-2">
+                <button onclick="animateCancellation()" class="btn-game flex-1 bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl text-xl font-black uppercase shadow-lg">
+                    ✨ Animar Choque ✨
+                </button>
+            </div>
+            
+            <!-- Result input phase -->
+            <div id="visual-result-phase" class="hidden flex gap-4 mt-2 bg-slate-800 p-4 rounded-2xl items-center border border-slate-600">
+                <span class="text-xl font-bold">¿Cuántas quedaron? Resultado:</span>
+                <input type="number" id="visual-result-input" class="w-24 bg-slate-900 border-2 border-indigo-500 rounded-lg p-2 text-2xl text-center font-bold outline-none">
+                <button onclick="checkVisualAnswer()" class="btn-game bg-emerald-500 px-6 py-2 rounded-lg font-bold text-slate-900">Validar</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center p-4">
+        <div id="feedback-card" class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl transform scale-90 transition-transform">
+            <div id="feedback-icon" class="text-7xl mb-4">✅</div>
+            <h2 id="feedback-title" class="text-3xl font-black text-slate-800 mb-2">¡Excelente!</h2>
+            <p id="feedback-msg" class="text-lg text-slate-600 mb-6 font-semibold">Lo has hecho muy bien.</p>
+            <button onclick="closeFeedback()" id="feedback-btn" class="btn-game w-full bg-emerald-500 py-3 rounded-xl text-xl font-bold text-white shadow-lg">
+                Continuar ➔
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        // State
+        const state = {
+            name: '',
+            section: 0,
+            stats: { correct: 0, incorrect: 0 },
+            op: { type: '', n1: 0, n2: 0, ans: 0, input: '', text: '' },
+            vis: { n1: 0, n2: 0, ans: 0, posTokens: 0, negTokens: 0 }
+        };
+
+        // --- Audio Engine (Web Audio API) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playTone(frequency, type, duration, vol = 0.1) {
+            if (!audioCtx) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playCorrectSound() {
+            initAudio();
+            playTone(523.25, 'sine', 0.15); // C5
+            setTimeout(() => playTone(659.25, 'sine', 0.3), 100); // E5
+        }
+
+        function playWrongSound() {
+            initAudio();
+            playTone(300, 'sawtooth', 0.2);
+            setTimeout(() => playTone(250, 'sawtooth', 0.4), 150);
+        }
+        
+        function playPopSound() {
+            initAudio();
+            playTone(800, 'sine', 0.05, 0.05);
+        }
+
+        function playVanishSound() {
+            initAudio();
+            playTone(150, 'triangle', 0.3, 0.1);
+        }
+
+        // --- DOM Helpers ---
+        function el(id) { return document.getElementById(id); }
+        function show(id) { el(id).classList.remove('hidden'); el(id).classList.add('flex'); }
+        function hide(id) { el(id).classList.add('hidden'); el(id).classList.remove('flex'); }
+
+        // --- Navigation ---
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            el(screenId).classList.add('active');
+            if (screenId !== 'screen-start') show('top-bar');
+            else hide('top-bar');
+        }
+
+        function startGame() {
+            const nameInput = el('player-name').value.trim();
+            if (nameInput.length < 2) {
+                shakeElement(el('player-name'));
+                return;
+            }
+            state.name = nameInput;
+            el('player-name-display').innerText = state.name;
+            el('avatar-initial').innerText = state.name.charAt(0).toUpperCase();
+            initAudio(); // Initialize audio context on first user gesture
+            switchScreen('screen-menu');
+        }
+
+        function goMenu() {
+            switchScreen('screen-menu');
+        }
+
+        function startSection(num) {
+            state.section = num;
+            if (num === 1) {
+                switchScreen('screen-ops');
+                generateOpExercise();
+            } else if (num === 2) {
+                switchScreen('screen-visual');
+                generateVisualExercise();
+            }
+        }
+
+        // --- UI Effects ---
+        function shakeElement(element) {
+            element.classList.remove('animate-shake');
+            void element.offsetWidth; // trigger reflow
+            element.classList.add('animate-shake');
+        }
+
+        function updateStats() {
+            el('stat-correct').innerText = state.stats.correct;
+            el('stat-incorrect').innerText = state.stats.incorrect;
+        }
+
+        function generateOpExercise() {
+            // Reset UI
+            show('op-step-1');
+            hide('op-step-2');
+            state.op.input = '';
+            el('numpad-display').innerText = '?';
+
+            // Generate numbers (1 digit)
+            // Prevent trivial zeros
+            do {
+                state.op.n1 = Math.floor(Math.random() * 19) - 9; // -9 to 9
+                state.op.n2 = Math.floor(Math.random() * 19) - 9;
+            } while (state.op.n1 === 0 || state.op.n2 === 0);
+
+            let displayStr = '';
+            const isMult = Math.random() < 0.33; // 33% chance of multiplication
+
+            if (!isMult) {
+                // Suma o Resta conceptual (depende de los signos)
+                if (Math.sign(state.op.n1) === Math.sign(state.op.n2)) {
+                    state.op.type = 'suma';
+                } else {
+                    state.op.type = 'resta';
+                }
+                
+                state.op.ans = state.op.n1 + state.op.n2;
+                
+                // Formato visual simple: -5 - 3 (suma), -5 + 3 (resta)
+                let s2 = state.op.n2 < 0 ? `- ${Math.abs(state.op.n2)}` : `+ ${state.op.n2}`;
+                displayStr = `${state.op.n1} ${s2}`;
+            } 
+            else {
+                state.op.type = 'mult';
+                state.op.ans = state.op.n1 * state.op.n2;
+                // Randomize mult format
+                const formats = [
+                    `(${state.op.n1})(${state.op.n2})`,
+                    `${state.op.n1} × (${state.op.n2})`,
+                    `(${state.op.n1}) · (${state.op.n2})`,
+                    `${state.op.n1}(${state.op.n2})`
+                ];
+                // if positive, can drop parenthesis sometimes
+                let f1 = state.op.n1 < 0 ? `(${state.op.n1})` : state.op.n1;
+                let f2 = state.op.n2 < 0 ? `(${state.op.n2})` : state.op.n2;
+                
+                const variations = [
+                    `${f1}${f2}`, // (-3)(4) or 3(-4)
+                    `${f1} × ${f2}`,
+                    `${f1} · ${f2}`
+                ];
+                displayStr = variations[Math.floor(Math.random() * variations.length)];
+                
+                // Edge case: if both are positive and format is f1f2, it might look like 34. Fix:
+                if (state.op.n1 > 0 && state.op.n2 > 0 && displayStr === `${f1}${f2}`) {
+                    displayStr = `${f1} × ${f2}`;
+                }
+            }
+
+            state.op.text = displayStr;
+            el('op-display').innerText = displayStr;
+            el('op-display').classList.add('animate-pop');
+            setTimeout(() => el('op-display').classList.remove('animate-pop'), 400);
+        }
+
+        function identifyOp(guessedType) {
+            if (guessedType === state.op.type) {
+                // Correct identification
+                playCorrectSound();
+                hide('op-step-1');
+                show('op-step-2');
+                el('op-step-2').classList.add('animate-pop');
+            } else {
+                // Wrong identification
+                playWrongSound();
+                state.stats.incorrect++;
+                updateStats();
+                
+                let explanation = '';
+                if (state.op.type === 'mult') {
+                    explanation = "Esta operación era multiplicación porque se usan paréntesis, puntos o el signo ×.";
+                } else if (state.op.type === 'suma') {
+                    explanation = "Ambos números tienen SIGNOS IGUALES. La regla nos dice que los debemos sumar.";
+                } else {
+                    explanation = "Los números tienen SIGNOS DIFERENTES. La regla nos dice que los debemos restar.";
+                }
+
+                showFeedback(false, "¡Atención!", explanation, "Entendido");
+            }
+        }
+
+        function pressNum(val) {
+            playPopSound();
+            if (val === 'del') {
+                state.op.input = state.op.input.slice(0, -1);
+            } else if (val === '-') {
+                if (state.op.input.startsWith('-')) {
+                    state.op.input = state.op.input.substring(1);
+                } else {
+                    state.op.input = '-' + state.op.input;
+                }
+            } else {
+                // max 4 chars
+                if (state.op.input.length < 4) {
+                    state.op.input += val;
+                }
+            }
+            el('numpad-display').innerText = state.op.input || '?';
+        }
+
+        function checkOpAnswer() {
+            if (state.op.input === '' || state.op.input === '-') {
+                shakeElement(el('numpad-display'));
+                return;
+            }
+
+            const numAns = parseInt(state.op.input, 10);
+            if (numAns === state.op.ans) {
+                // Correct!
+                playCorrectSound();
+                state.stats.correct++;
+                updateStats();
+                triggerConfetti();
+                showFeedback(true, "¡Excelente!", "Resolviste la operación correctamente.", "Siguiente Reto", generateOpExercise);
+            } else {
+                // Incorrect
+                playWrongSound();
+                state.stats.incorrect++;
+                updateStats();
+                shakeElement(el('op-step-2'));
+
+                let expl = generarExplicacionPedagogica(state.op.type, state.op.n1, state.op.n2, state.op.ans, numAns);
+                showFeedback(false, "Casi...", expl, "Reintentar", () => {
+                    state.op.input = '';
+                    el('numpad-display').innerText = '?';
+                });
+            }
+        }
+
+        function generarExplicacionPedagogica(tipo, n1, n2, ansReal, ansUser) {
+            if (tipo === 'mult') {
+                return `En MULTIPLICACIÓN: Signos iguales dan POSITIVO y signos diferentes dan NEGATIVO.\n\nLa respuesta correcta es ${ansReal}.`;
+            } else if (tipo === 'suma') {
+                return `Como son SIGNOS IGUALES, debes SUMAR los valores y DEJAR EL MISMO SIGNO.\n\nLa respuesta correcta es ${ansReal}.`;
+            } else {
+                return `Como son SIGNOS DIFERENTES, debes RESTAR los valores y DEJAR EL SIGNO DEL MAYOR.\n\nLa respuesta correcta es ${ansReal}.`;
+            }
+        }
+
+        function generateVisualExercise() {
+            hide('visual-result-phase');
+            el('visual-result-input').value = '';
+            
+            // Generate numbers (-5 to 5)
+            state.vis.n1 = Math.floor(Math.random() * 11) - 5; 
+            state.vis.n2 = Math.floor(Math.random() * 11) - 5;
+            
+            // Prevent 0s
+            if (state.vis.n1 === 0) state.vis.n1 = 2;
+            if (state.vis.n2 === 0) state.vis.n2 = -3;
+
+            state.vis.ans = state.vis.n1 + state.vis.n2;
+            
+            // Format string appropriately
+            let s2 = state.vis.n2 < 0 ? `- ${Math.abs(state.vis.n2)}` : `+ ${state.vis.n2}`;
+            el('visual-op-display').innerText = `${state.vis.n1} ${s2}`;
+            el('visual-op-display').classList.add('animate-pop');
+            setTimeout(() => el('visual-op-display').classList.remove('animate-pop'), 400);
+
+            // Reset Tokens
+            state.vis.posTokens = 0;
+            state.vis.negTokens = 0;
+            renderTokens();
+        }
+
+        function addToken(type) {
+            playPopSound();
+            if (type === 'pos' && state.vis.posTokens < 15) state.vis.posTokens++;
+            if (type === 'neg' && state.vis.negTokens < 15) state.vis.negTokens++;
+            renderTokens();
+        }
+
+        function removeToken(type) {
+            if (type === 'pos' && state.vis.posTokens > 0) state.vis.posTokens--;
+            if (type === 'neg' && state.vis.negTokens > 0) state.vis.negTokens--;
+            playPopSound();
+            renderTokens();
+        }
+
+        function renderTokens() {
+            const containerPos = el('arena-pos');
+            const containerNeg = el('arena-neg');
+            
+            containerPos.innerHTML = '';
+            containerNeg.innerHTML = '';
+
+            for (let i = 0; i < state.vis.posTokens; i++) {
+                const tk = document.createElement('div');
+                tk.className = 'token pos animate-pop';
+                tk.innerText = '+';
+                containerPos.appendChild(tk);
+            }
+
+            for (let i = 0; i < state.vis.negTokens; i++) {
+                const tk = document.createElement('div');
+                tk.className = 'token neg animate-pop';
+                tk.innerText = '-';
+                containerNeg.appendChild(tk);
+            }
+        }
+
+        function animateCancellation() {
+            // First, validate if user put the right amount of tokens!
+            let expectedPos = (state.vis.n1 > 0 ? state.vis.n1 : 0) + (state.vis.n2 > 0 ? state.vis.n2 : 0);
+            let expectedNeg = (state.vis.n1 < 0 ? Math.abs(state.vis.n1) : 0) + (state.vis.n2 < 0 ? Math.abs(state.vis.n2) : 0);
+
+            if (state.vis.posTokens !== expectedPos || state.vis.negTokens !== expectedNeg) {
+                playWrongSound();
+                showFeedback(false, "¡Revisa las fichas!", `La operación es ${el('visual-op-display').innerText}. Necesitas colocar exactamente ${expectedPos} fichas rojas (positivas) y ${expectedNeg} azules (negativas) para empezar.`, "Corregir");
+                return;
+            }
+
+            // Execute animation
+            const posDivs = Array.from(el('arena-pos').children);
+            const negDivs = Array.from(el('arena-neg').children);
+            
+            let pairs = Math.min(posDivs.length, negDivs.length);
+            
+            if (pairs === 0) {
+                // Same signs, no opposite pairs to cancel
+                showFeedback(true, "¡Se agrupan!", "Como todas las fichas son del mismo color/signo, no se anulan entre sí, ¡se suman!", "Ver Resultado", () => {
+                    show('visual-result-phase');
+                });
+                return;
+            }
+
+            let delay = 0;
+            playVanishSound();
+            for (let i = 0; i < pairs; i++) {
+                setTimeout(() => {
+                    posDivs[i].classList.add('animate-vanish');
+                    negDivs[i].classList.add('animate-vanish');
+                    if (i % 2 === 0) playVanishSound(); // limit sound overlap
+                }, delay);
+                delay += 400; // animate each pair sequentially
+            }
+
+            setTimeout(() => {
+                // Update state after animation
+                state.vis.posTokens -= pairs;
+                state.vis.negTokens -= pairs;
+                renderTokens();
+                show('visual-result-phase');
+            }, delay + 500);
+        }
+
+        function checkVisualAnswer() {
+            const inputVal = el('visual-result-input').value;
+            if (inputVal === '') return;
+            
+            if (parseInt(inputVal, 10) === state.vis.ans) {
+                playCorrectSound();
+                state.stats.correct++;
+                updateStats();
+                triggerConfetti();
+                showFeedback(true, "¡Misión Cumplida!", "Has comprobado visualmente cómo se anulan los enteros opuestos.", "Siguiente Experimento", generateVisualExercise);
+            } else {
+                playWrongSound();
+                state.stats.incorrect++;
+                updateStats();
+                shakeElement(el('visual-result-phase'));
+                showFeedback(false, "Cuenta bien", "Revisa cuántas fichas quedaron en el tablero y de qué tipo son.", "Reintentar");
+            }
+        }
+
+        let feedbackCallback = null;
+
+        function showFeedback(isSuccess, title, msg, btnText, callback = null) {
+            const modal = el('feedback-modal');
+            const card = el('feedback-card');
+            const icon = el('feedback-icon');
+            const titleEl = el('feedback-title');
+            const btn = el('feedback-btn');
+
+            feedbackCallback = callback;
+
+            if (isSuccess) {
+                icon.innerText = '✨';
+                titleEl.className = 'text-3xl font-black text-emerald-600 mb-2';
+                btn.className = 'btn-game w-full bg-emerald-500 hover:bg-emerald-400 py-3 rounded-xl text-xl font-bold text-white shadow-lg';
+            } else {
+                icon.innerText = '❌';
+                titleEl.className = 'text-3xl font-black text-rose-600 mb-2';
+                btn.className = 'btn-game w-full bg-rose-500 hover:bg-rose-400 py-3 rounded-xl text-xl font-bold text-white shadow-lg';
+            }
+
+            titleEl.innerText = title;
+            el('feedback-msg').innerText = msg;
+            btn.innerText = btnText;
+
+            show('feedback-modal');
+            
+            // Animation reset
+            card.classList.remove('scale-100');
+            card.classList.add('scale-90', 'opacity-0');
+            setTimeout(() => {
+                card.classList.remove('scale-90', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100', 'transition-all', 'duration-300');
+            }, 10);
+        }
+
+        function closeFeedback() {
+            hide('feedback-modal');
+            if (feedbackCallback) {
+                feedbackCallback();
+                feedbackCallback = null;
+            }
+        }
+
+        // Simple Confetti Generator
+        const canvas = el('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let confettiActive = false;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerConfetti() {
+            particles = [];
+            const colors = ['#f43f5e', '#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2 + 100,
+                    r: Math.random() * 6 + 4,
+                    dx: Math.random() * 20 - 10,
+                    dy: Math.random() * -20 - 10,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10 - 10,
+                    tiltAngle: 0,
+                    tiltAngleInc: (Math.random() * 0.07) + 0.05
+                });
+            }
+            if (!confettiActive) {
+                confettiActive = true;
+                animateConfetti();
+            }
+        }
+
+        function animateConfetti() {
+            requestAnimationFrame(animateConfetti);
+            if (particles.length === 0) {
+                confettiActive = false;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach((p, index) => {
+                p.tiltAngle += p.tiltAngleInc;
+                p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2;
+                p.x += Math.sin(p.tiltAngle) * 2 + p.dx;
+                p.dy += 0.5; // gravity
+                p.y += p.dy;
+
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.x + p.tilt + p.r, p.y);
+                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+                ctx.stroke();
+
+                // Remove off-screen particles
+                if (p.y > canvas.height) {
+                    particles.splice(index, 1);
+                }
+            });
+        }
+
+        // Initialize Keyboard support for the input in visual mode
+        document.addEventListener('keydown', (e) => {
+            if (el('screen-ops').classList.contains('active') && el('op-step-2').classList.contains('flex')) {
+                if (/[0-9]/.test(e.key)) pressNum(e.key);
+                if (e.key === 'Backspace') pressNum('del');
+                if (e.key === '-') pressNum('-');
+                if (e.key === 'Enter') checkOpAnswer();
+            }
+        });
+
+    </script>
+</body>
+</html>
